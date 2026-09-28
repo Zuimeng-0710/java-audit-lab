@@ -1,0 +1,29 @@
+rules:
+  - id: jal.java.sql-concatenation
+    message: 动态数据被拼接进 SQL 执行点，请追踪变量来源并改用参数绑定。
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: CWE-89
+      confidence: MEDIUM
+    patterns:
+      - pattern-either:
+          - pattern: $S.executeQuery($SQL + $X)
+          - pattern: $S.executeUpdate($SQL + $X)
+          - pattern: $C.prepareStatement($SQL + $X)
+  - id: jal.java.runtime-exec-dynamic
+    message: 动态值进入系统命令执行点，请确认来源、参数边界和白名单。
+    languages: [java]
+    severity: ERROR
+    metadata:
+      cwe: CWE-78
+      confidence: MEDIUM
+    pattern: Runtime.getRuntime().exec($X)
+  - id: jal.java.xml-factory-review
+    message: XML 工厂需要在解析前禁用 DTD 和外部实体，请复核后续配置。
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe: CWE-611
+      confidence: LOW
+    pattern: DocumentBuilderFactory.newInstance()

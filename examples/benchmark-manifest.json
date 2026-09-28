@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "target": "vulnerable-demo",
+      "expected_rules": [
+        "JAL-SQL-001", "JAL-CMD-001", "JAL-PATH-001", "JAL-XXE-001", "JAL-SECRET-001",
+        "JAL-DESER-001", "JAL-SSRF-001", "JAL-SPEL-001", "JAL-CRYPTO-001"
+      ]
+    },
+    {"target": "safe-demo", "expected_rules": []}
+  ]
+}

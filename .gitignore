@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+target/
+audit-report/
+output/
+.idea/
+.vscode/
+.java-audit-cache/
+.m2-test/
+docs/WORKBUDDY_REVIEW_2026-09-28.md

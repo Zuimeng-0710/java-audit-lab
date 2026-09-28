@@ -1,0 +1,21 @@
+# Copy to the root of the Java project as .java-audit.yml
+scanners:
+  - builtin
+  - secrets
+  - taint
+  - semgrep
+  - spotbugs
+  - dependency-check
+  - codeql
+fail_on: high
+ai_level: beginner
+cache: true
+exclude_paths:
+  - src/test/*
+  - generated/*
+extra_rules: []
+public_endpoints:
+  - /login
+  - /health
+# 添加团队规则时改为：
+# extra_rules: [.java-audit/rules/team-rules.yaml]

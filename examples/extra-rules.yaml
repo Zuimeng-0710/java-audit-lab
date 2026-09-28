@@ -1,0 +1,27 @@
+# 示例外部规则：演示如何在不修改代码的情况下扩展 Java Audit Lab。
+# 用法：
+#   python -m audit scan myproject --scanners builtin --rules examples/extra-rules.yaml
+# 或放进 <project>/.java-audit/rules/ 目录会被自动加载。
+# 必填字段：id、pattern；其余字段缺省时使用保守默认值。
+# 注意：本工具用极简 YAML parser，列表只能用 inline 数组写法（["a", "b"]），
+# 不支持缩进式嵌套列表。如果需要复杂结构，请用 JSON 文件。
+
+- id: JAL-EXT-LOG-001
+  title: 敏感日志输出
+  cwe: CWE-532
+  severity: low
+  confidence: medium
+  pattern: 'log(?:ger)?\.(?:info|debug|error|warn)\s*\([^;\n]*(?:password|token|secret|apiKey)\w*'
+  description: 日志调用引用了疑似凭据字段；明文记录可能导致凭据进入日志聚合系统。
+  review_steps: ["确认日志参数是否实际拼接了凭据值，而不是字段名碰撞。", "检查日志聚合链路是否有脱敏过滤器。", "评估是否需要改为脱敏输出或完全删除该字段。"]
+  remediation: 不要将凭据字段输出到日志；如必须记录，使用专用的脱敏过滤器覆盖字段名模式。
+
+- id: JAL-EXT-CORS-001
+  title: CORS 允许所有来源
+  cwe: CWE-942
+  severity: medium
+  confidence: high
+  pattern: 'addAllowedOrigin\s*\(\s*"\*"'
+  description: Spring CORS 配置允许任意来源跨域访问；如果接口同时支持凭据，可能允许任意网站发起请求。
+  review_steps: ["确认接口是否携带 Cookie 或 Authorization。", "确认是否启用 allowCredentials(true) 且与 * 同时使用（这是 Spring 5.3+ 的非法组合）。", "评估是否需要按来源白名单替换。"]
+  remediation: 用来源白名单替换星号；允许凭据时绝对禁止使用 *。
