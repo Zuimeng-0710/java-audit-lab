@@ -1,6 +1,6 @@
 <div align="center">
 
-![Java Audit Lab](docs/assets/readme-hero.svg)
+![Java Audit Lab](docs/assets/readme-hero-v2.png)
 
 [简体中文](#java-audit-lab) · [English](#english-summary)
 
