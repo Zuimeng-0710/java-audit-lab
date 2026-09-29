@@ -144,16 +144,18 @@ jal s -h
 ## 当前能力
 
 | 状态 | 能力 | 当前范围 |
-|---|---|---|
-| ✅ 可用 | 教学规则 | 12 类 Java 规则，覆盖 SQL、命令、路径、XXE、反序列化、SSRF、表达式、弱哈希、认证与敏感日志 |
-| ✅ 可用 | 配置凭据扫描 | YAML、Properties、JSON、`.env`；证据和指纹不保存原始密钥 |
-| 🧪 Beta | 方法内污点分析 | 请求参数、赋值传播、净化反证和危险终点 |
-| ✅ 可用 | 攻击面画像 | Controller、Filter、Interceptor、Security、上传、消息消费者、定时任务、MyBatis、JPA |
-| 🧪 Beta | 端点权限矩阵 | Spring Security、Shiro、方法级注解和 Spring MVC Interceptor |
-| ✅ 可用 | Git 增量审计 | 变更文件、依赖闭包、权限放宽、同类新位置和修复残留 |
-| ✅ 可用 | 多引擎归并 | SARIF、Semgrep、SpotBugs、Dependency-Check 和 CodeQL |
-| ✅ 可用 | 复核档案 | 浏览器本地保存、导入导出、基线新增与已修复分类 |
-| 🧪 Pilot | 匿名评测语料 | SQL 注入、SSRF、路径遍历和硬编码凭据的 vulnerable / safe / edge 案例 |
+|:---:|---|---|
+| 稳定 | 教学规则 | SQL、命令、路径、XXE、SSRF 等 12 类规则 |
+| 稳定 | 配置凭据扫描 | YAML、Properties、JSON、`.env`，原始密钥不进入报告 |
+| 测试中 | 方法内污点分析 | 请求参数、赋值传播、净化反证、危险终点 |
+| 稳定 | 攻击面画像 | Web 入口、拦截器、上传、消息、任务、数据访问层 |
+| 测试中 | 端点权限矩阵 | Spring Security、Shiro、方法注解、MVC Interceptor |
+| 稳定 | Git 增量审计 | 变更范围、权限放宽、同类位置、修复残留 |
+| 稳定 | 多引擎归并 | SARIF、Semgrep、SpotBugs、Dependency-Check、CodeQL |
+| 稳定 | 复核档案 | 本地保存、导入导出、基线新增与已修复分类 |
+| 试点 | 匿名评测语料 | 四类 vulnerable / safe / edge 试点样本 |
+
+**状态说明：** 稳定＝已纳入常规测试 · 测试中＝功能可用但仍在完善 · 试点＝用于验证方向和评测流程
 
 每条发现会标注 `production`、`test`、`example` 或 `generated` 范围，避免测试与示例代码稀释生产风险。
 

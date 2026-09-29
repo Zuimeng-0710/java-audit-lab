@@ -141,16 +141,18 @@ Each stage records available and missing evidence. Scanner output and human answ
 ## Current capabilities
 
 | Status | Capability | Current scope |
-|---|---|---|
-| ✅ Available | Educational rules | 12 Java rule families covering SQL, command, path, XXE, deserialization, SSRF, expression, weak hash, authentication, and sensitive logging |
-| ✅ Available | Configuration secret scan | YAML, Properties, JSON, and `.env`; raw secret values are not retained |
-| 🧪 Beta | Intra-method taint analysis | Request parameters, assignments, sanitizer evidence, and sensitive sinks |
-| ✅ Available | Attack-surface inventory | Controllers, filters, interceptors, security config, uploads, consumers, jobs, MyBatis, and JPA |
-| 🧪 Beta | Endpoint authorization matrix | Spring Security, Shiro, method annotations, and Spring MVC interceptors |
-| ✅ Available | Git differential audit | Changed files, context closure, weakened authorization, related locations, and residual findings |
-| ✅ Available | Multi-engine consolidation | SARIF, Semgrep, SpotBugs, Dependency-Check, and CodeQL |
-| ✅ Available | Review archive | Browser-local notes, import/export, baseline new/fixed classification |
-| 🧪 Pilot | Anonymous evaluation corpus | Vulnerable, safe, and edge cases for SQL injection, SSRF, path traversal, and hardcoded credentials |
+|:---:|---|---|
+| Stable | Educational rules | 12 rule families including SQL, command, path, XXE, and SSRF |
+| Stable | Configuration secret scan | YAML, Properties, JSON, and `.env`; raw secrets are not retained |
+| Beta | Intra-method taint analysis | Parameters, assignments, sanitizers, and sensitive sinks |
+| Stable | Attack-surface inventory | Web entries, interceptors, uploads, messages, jobs, and data access |
+| Beta | Endpoint authorization matrix | Spring Security, Shiro, method annotations, and MVC interceptors |
+| Stable | Git differential audit | Change scope, weakened authorization, related locations, residual findings |
+| Stable | Multi-engine consolidation | SARIF, Semgrep, SpotBugs, Dependency-Check, and CodeQL |
+| Stable | Review archive | Local storage, import/export, and baseline classification |
+| Pilot | Anonymous evaluation corpus | Four pilot families with vulnerable, safe, and edge cases |
+
+**Status definitions:** Stable = covered by routine tests · Beta = usable and still evolving · Pilot = validating the direction and evaluation workflow
 
 Each finding is classified as `production`, `test`, `example`, or `generated` so non-production code does not dilute production review.
 
