@@ -191,7 +191,7 @@ def sinks_for(kind: str) -> tuple[SinkModel, ...]:
 
 
 def model_summary() -> dict[str, object]:
-    """供 `java-audit rules` 与报告展示模型覆盖情况。"""
+    """供 `jal r` 与报告展示模型覆盖情况。"""
     frameworks = sorted({item.framework for item in SINKS} | {item.framework for item in SOURCES})
     kinds = sorted({item.sink_kind for item in SINKS})
     return {

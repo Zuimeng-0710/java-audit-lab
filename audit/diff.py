@@ -9,9 +9,9 @@
 
 三个入口：
 
-    java-audit scan . --diff              # 工作区未提交变更
-    java-audit scan . --diff main         # 相对 main 分支的全部变更
-    java-audit scan . --commit HEAD~1     # 单次提交引入的变更
+    jal . -d              # 工作区未提交变更
+    jal . -d main         # 相对 main 分支的全部变更
+    jal . -C HEAD~1       # 单次提交引入的变更
 """
 
 from __future__ import annotations
