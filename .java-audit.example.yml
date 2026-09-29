@@ -17,5 +17,10 @@ extra_rules: []
 public_endpoints:
   - /login
   - /health
+# 可选的专业报告档案字段；不会据此自动声明已经获得授权
+report_owner: ""
+authorization_ref: ""
+scope_note: ""
+retention_note: ""
 # 添加团队规则时改为：
 # extra_rules: [.java-audit/rules/team-rules.yaml]

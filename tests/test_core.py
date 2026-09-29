@@ -1,6 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import io
+import json
 import re
 import shutil
 import subprocess
@@ -29,9 +30,15 @@ class CoreTests(unittest.TestCase):
             source = root / "src/main/java/Demo.java"
             source.parent.mkdir(parents=True)
             source.write_text("class Demo {}", encoding="utf-8")
+            (root / "application.yml").write_text("server.port: 8080", encoding="utf-8")
+            (root / "index.html").write_text("<main>demo</main>", encoding="utf-8")
             info = detect_project(root)
             self.assertEqual(info.build_system, "maven")
             self.assertEqual(info.java_files, 1)
+            self.assertEqual(info.inventory["source_files"], 1)
+            self.assertEqual(info.inventory["config_files"], 2)
+            self.assertEqual(info.inventory["web_files"], 1)
+            self.assertGreater(info.inventory["estimated_lines"], 0)
 
     def test_builtin_finding_contains_review_evidence(self):
         with TemporaryDirectory() as temp:
@@ -50,22 +57,39 @@ class CoreTests(unittest.TestCase):
             (root / "Demo.java").write_text('class Demo { String password = "secret-value"; }', encoding="utf-8")
             info = detect_project(root)
             result = BuiltinRunner().run(root, root)
-            _, html_path, md_path = write_reports(root / "report", info, result.findings, [result])
+            json_path, html_path, md_path = write_reports(root / "report", info, result.findings, [result])
             page = html_path.read_text(encoding="utf-8")
             self.assertIn("确认漏洞", page)
             self.assertIn("误报", page)
             self.assertIn("审计阶段 · Evidence Driven Playbook", page)
             self.assertIn("漏洞成立五问", page)
             self.assertIn("人工复核记录", page)
+            self.assertIn("验证台账", page)
+            self.assertIn("验证任务卡", page)
+            self.assertIn("data-task-status", page)
+            self.assertIn("误报归因", page)
+            self.assertIn("本工具不会自动连接目标", page)
             self.assertIn("data-review-state", page)
             self.assertIn("深色模式", page)
+            self.assertIn("审计档案与范围", page)
+            self.assertIn("扫描覆盖清单", page)
             self.assertIn(".page{width:100%;max-width:none", page)
             self.assertIn("text-overflow:ellipsis", page)
             self.assertIn("@media(max-width:760px)", page)
             self.assertNotIn("&amp;#x20;", page)
             markdown = md_path.read_text(encoding="utf-8")
+            report_json = json.loads(json_path.read_text(encoding="utf-8"))
+            self.assertEqual(report_json["schema_version"], "1.4")
+            self.assertIn("engagement", report_json)
+            self.assertIn("verification_summary", report_json)
+            task = report_json["findings"][0]["verification_task"]
+            self.assertTrue(task["task_id"].startswith("JAL-V-"))
+            self.assertEqual(task["status"], "not-started")
+            self.assertNotIn("payload", task)
             self.assertIn("待人工确认项", markdown)
-            self.assertIn("授权状态：由使用者自行确认", markdown)
+            self.assertIn("验证台账", markdown)
+            self.assertIn("授权依据：未填写；授权状态由使用者自行确认", markdown)
+            self.assertIn("审计档案与范围", markdown)
 
     def test_authorization_matrix_has_readable_filters_and_fixed_columns(self):
         section = _authz_section({
@@ -200,8 +224,11 @@ class CoreTests(unittest.TestCase):
             comparison = compare_with_baseline(findings, baseline)
             self.assertEqual(len(comparison["new"]), 1)
             review = root / "review.json"
-            review.write_text('{"reviews":{"abc":{"verdict":"confirmed"}}}', encoding="utf-8")
-            self.assertEqual(load_reviews(review)["abc"]["verdict"], "confirmed")
+            review.write_text('{"reviews":{"abc":{"verdict":"confirmed","verification_status":"verified","attempts":2}}}', encoding="utf-8")
+            loaded = load_reviews(review)["abc"]
+            self.assertEqual(loaded["verdict"], "confirmed")
+            self.assertEqual(loaded["verification_status"], "verified")
+            self.assertEqual(loaded["attempts"], 2)
 
     def test_detects_frameworks_from_maven_manifest(self):
         with TemporaryDirectory() as temp:
@@ -224,11 +251,13 @@ class CoreTests(unittest.TestCase):
     def test_loads_simple_yaml_config(self):
         with TemporaryDirectory() as temp:
             path = Path(temp) / ".java-audit.yml"
-            path.write_text("scanners:\n  - builtin\nfail_on: high\ncache: false\n", encoding="utf-8")
+            path.write_text("scanners:\n  - builtin\nfail_on: high\ncache: false\nreport_owner: security-team\nauthorization_ref: AUTH-001\n", encoding="utf-8")
             config = load_config(path)
             self.assertEqual(config["scanners"], ["builtin"])
             self.assertEqual(config["fail_on"], "high")
             self.assertFalse(config["cache"])
+            self.assertEqual(config["report_owner"], "security-team")
+            self.assertEqual(config["authorization_ref"], "AUTH-001")
 
     def test_rejects_missing_explicit_config_and_invalid_list_fields(self):
         with TemporaryDirectory() as temp:

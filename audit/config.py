@@ -13,6 +13,10 @@ DEFAULTS: dict[str, Any] = {
     "exclude_paths": [],
     "extra_rules": [],
     "public_endpoints": [],
+    "report_owner": "",
+    "authorization_ref": "",
+    "scope_note": "",
+    "retention_note": "",
 }
 
 
@@ -36,6 +40,9 @@ def load_config(path: Path | None) -> dict[str, Any]:
         raise ValueError("extra_rules 必须是列表")
     if not isinstance(result["public_endpoints"], list):
         raise ValueError("public_endpoints 必须是列表")
+    for key in ("report_owner", "authorization_ref", "scope_note", "retention_note"):
+        if not isinstance(result[key], str):
+            raise ValueError(f"{key} 必须是字符串")
     return result
 
 
