@@ -16,7 +16,7 @@ from audit.config import discover_config, load_config
 from audit.findings import Finding, Location, assess_path, consolidate_findings, generalize_findings
 from audit.benchmark import run_benchmark
 from audit.playbook import evaluate_playbook
-from audit.report import write_reports
+from audit.report import _authz_section, write_reports
 from audit.runners.builtin import BuiltinRunner, load_extra_rules
 from audit.surface import collect_surface
 
@@ -56,12 +56,41 @@ class CoreTests(unittest.TestCase):
             self.assertIn("误报", page)
             self.assertIn("审计阶段 · Evidence Driven Playbook", page)
             self.assertIn("漏洞成立五问", page)
+            self.assertIn("人工复核记录", page)
+            self.assertIn("data-review-state", page)
+            self.assertIn("深色模式", page)
             self.assertIn(".page{width:100%;max-width:none", page)
             self.assertIn("text-overflow:ellipsis", page)
             self.assertIn("@media(max-width:760px)", page)
+            self.assertNotIn("&amp;#x20;", page)
             markdown = md_path.read_text(encoding="utf-8")
             self.assertIn("待人工确认项", markdown)
             self.assertIn("授权状态：由使用者自行确认", markdown)
+
+    def test_authorization_matrix_has_readable_filters_and_fixed_columns(self):
+        section = _authz_section({
+            "authz": {
+                "coverage": {"endpoints": 1, "proven": 0, "missing": 1, "anonymous": 0, "rules": 0},
+                "endpoints": [{
+                    "route": "/admin/users/{id}",
+                    "handler": "AdminController.deleteUser",
+                    "path": "src/main/java/example/AdminController.java",
+                    "line": 42,
+                    "http_method": "DELETE",
+                    "requirement": "unknown",
+                    "status": "missing",
+                    "roles": [],
+                    "permissions": [],
+                    "dangerous_ops": ["delete"],
+                    "expression": "",
+                }],
+            }
+        })
+        self.assertIn('id="authz-search"', section)
+        self.assertIn('id="authz-filter"', section)
+        self.assertIn('class="authz-table"', section)
+        self.assertIn('data-authz-status="missing"', section)
+        self.assertIn('class="method-badge"', section)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is required for JavaScript syntax validation")
     def test_report_inline_javascript_is_valid(self):
