@@ -1,0 +1,23 @@
+{
+  "case_id": "PATH-001",
+  "title": "文件名来自请求参数直接拼接路径",
+  "category": "path-traversal",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "fileName 可携带 ../ 突破存储根目录。",
+  "expected": "vulnerable",
+  "expected_rules": [
+    "JAL-PATH-001"
+  ],
+  "evidence_level": "inferred",
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/path/AttachmentController.java",
+      "line": 24
+    }
+  ]
+}

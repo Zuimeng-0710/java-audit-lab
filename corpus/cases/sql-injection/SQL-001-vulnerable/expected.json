@@ -1,0 +1,24 @@
+{
+  "case_id": "SQL-001",
+  "title": "请求参数直接拼接到 SQL 查询",
+  "category": "sql-injection",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "jdbc"
+  ],
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "用户输入未经过任何收敛直接进入 SQL 文本。",
+  "expected": "vulnerable",
+  "expected_rules": [
+    "JAL-SQL-001"
+  ],
+  "evidence_level": "inferred",
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/sql/OrderQueryController.java",
+      "line": 28
+    }
+  ]
+}

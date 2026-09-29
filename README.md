@@ -286,10 +286,16 @@ java-audit scan . -o report --scanners builtin --ai --ai-level beginner
 ```powershell
 python -m unittest discover -s tests -v
 python -m audit benchmark
+python corpus/tools/validate_corpus.py
+python corpus/tools/evaluate_corpus.py --strict-locations
 python -m compileall -q audit
 python -m audit scan examples/vulnerable-demo -o output/vulnerable --scanners builtin --yes
 python -m audit scan examples/safe-demo -o output/safe --scanners builtin --yes
 ```
+
+`corpus/` 是匿名评测语料。当前试点包含 SQL 注入、SSRF、路径遍历和硬编码凭据的
+12 个危险、安全与边界案例。它用于验证评测流水线和规则回归，train 样本上的分数不代表
+真实项目准确率；详细限制与复现方式见 [corpus/README.md](corpus/README.md)。
 
 规则贡献必须包含危险示例、安全示例、容易误报的边界示例和复核条件。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 

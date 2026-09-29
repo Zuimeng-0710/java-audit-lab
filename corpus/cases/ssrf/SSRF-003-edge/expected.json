@@ -1,0 +1,19 @@
+{
+  "case_id": "SSRF-003",
+  "title": "URI 仅用于提取路径，无网络请求",
+  "category": "ssrf",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "解析与出站请求是两件事；本样本只做前者。",
+  "expected": "safe",
+  "forbidden_rules": [
+    "JAL-SSRF-001"
+  ],
+  "security_controls": [
+    "URI 解析仅取 path 并做字符白名单"
+  ]
+}

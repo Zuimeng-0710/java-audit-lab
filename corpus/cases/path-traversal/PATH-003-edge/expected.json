@@ -1,0 +1,20 @@
+{
+  "case_id": "PATH-003",
+  "title": "FilenameUtils.getName 剥离路径分量后拼接",
+  "category": "path-traversal",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "commons-io"
+  ],
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "用户输入虽参与路径构造，但路径分量已被剥离。",
+  "expected": "safe",
+  "forbidden_rules": [
+    "JAL-PATH-001"
+  ],
+  "security_controls": [
+    "FilenameUtils.getName 剥离目录分量"
+  ]
+}

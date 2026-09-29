@@ -1,0 +1,19 @@
+{
+  "case_id": "PATH-002",
+  "title": "服务端存储标识 + 规范化边界校验",
+  "category": "path-traversal",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "下载凭据由服务端生成，不接收客户端路径片段。",
+  "expected": "safe",
+  "forbidden_rules": [
+    "JAL-PATH-001"
+  ],
+  "security_controls": [
+    "normalize 后 startsWith 目录边界校验"
+  ]
+}

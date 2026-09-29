@@ -1,0 +1,202 @@
+{
+  "corpus": "corpus",
+  "split": "train",
+  "scanner": "builtin",
+  "totals": {
+    "cases": 12,
+    "TP": 4,
+    "FP": 0,
+    "FN": 0,
+    "TN": 8,
+    "UNSCORED": 0
+  },
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1": 1.0,
+  "rule_stats": [
+    {
+      "rule_id": "JAL-PATH-001",
+      "vuln": 1,
+      "detected": 1,
+      "safe": 2,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    {
+      "rule_id": "JAL-SECRET-001",
+      "vuln": 1,
+      "detected": 1,
+      "safe": 2,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    {
+      "rule_id": "JAL-SQL-001",
+      "vuln": 1,
+      "detected": 1,
+      "safe": 2,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    {
+      "rule_id": "JAL-SSRF-001",
+      "vuln": 1,
+      "detected": 1,
+      "safe": 2,
+      "fp": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    {
+      "rule_id": "JAL-SSRF-101",
+      "vuln": 0,
+      "detected": 0,
+      "safe": 1,
+      "fp": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "SQL-001",
+      "category": "sql-injection",
+      "variant": "vulnerable",
+      "expected": "vulnerable",
+      "status": "TP",
+      "hit_rules": [
+        "JAL-SQL-001"
+      ],
+      "missing_rules": [],
+      "extras": [],
+      "location_misses": []
+    },
+    {
+      "case_id": "SQL-002",
+      "category": "sql-injection",
+      "variant": "safe",
+      "expected": "safe",
+      "status": "TN",
+      "fp_rules": [],
+      "unexpected_rules": [],
+      "extras": []
+    },
+    {
+      "case_id": "SQL-003",
+      "category": "sql-injection",
+      "variant": "edge",
+      "expected": "safe",
+      "status": "TN",
+      "fp_rules": [],
+      "unexpected_rules": [],
+      "extras": []
+    },
+    {
+      "case_id": "SSRF-001",
+      "category": "ssrf",
+      "variant": "vulnerable",
+      "expected": "vulnerable",
+      "status": "TP",
+      "hit_rules": [
+        "JAL-SSRF-001"
+      ],
+      "missing_rules": [],
+      "extras": [],
+      "location_misses": []
+    },
+    {
+      "case_id": "SSRF-002",
+      "category": "ssrf",
+      "variant": "safe",
+      "expected": "safe",
+      "status": "TN",
+      "fp_rules": [],
+      "unexpected_rules": [],
+      "extras": []
+    },
+    {
+      "case_id": "SSRF-003",
+      "category": "ssrf",
+      "variant": "edge",
+      "expected": "safe",
+      "status": "TN",
+      "fp_rules": [],
+      "unexpected_rules": [],
+      "extras": []
+    },
+    {
+      "case_id": "PATH-001",
+      "category": "path-traversal",
+      "variant": "vulnerable",
+      "expected": "vulnerable",
+      "status": "TP",
+      "hit_rules": [
+        "JAL-PATH-001"
+      ],
+      "missing_rules": [],
+      "extras": [],
+      "location_misses": []
+    },
+    {
+      "case_id": "PATH-002",
+      "category": "path-traversal",
+      "variant": "safe",
+      "expected": "safe",
+      "status": "TN",
+      "fp_rules": [],
+      "unexpected_rules": [],
+      "extras": []
+    },
+    {
+      "case_id": "PATH-003",
+      "category": "path-traversal",
+      "variant": "edge",
+      "expected": "safe",
+      "status": "TN",
+      "fp_rules": [],
+      "unexpected_rules": [],
+      "extras": []
+    },
+    {
+      "case_id": "SECRET-001",
+      "category": "secrets",
+      "variant": "vulnerable",
+      "expected": "vulnerable",
+      "status": "TP",
+      "hit_rules": [
+        "JAL-SECRET-001"
+      ],
+      "missing_rules": [],
+      "extras": [],
+      "location_misses": []
+    },
+    {
+      "case_id": "SECRET-002",
+      "category": "secrets",
+      "variant": "safe",
+      "expected": "safe",
+      "status": "TN",
+      "fp_rules": [],
+      "unexpected_rules": [],
+      "extras": []
+    },
+    {
+      "case_id": "SECRET-003",
+      "category": "secrets",
+      "variant": "edge",
+      "expected": "safe",
+      "status": "TN",
+      "fp_rules": [],
+      "unexpected_rules": [],
+      "extras": []
+    }
+  ]
+}
