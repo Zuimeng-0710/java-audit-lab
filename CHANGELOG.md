@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- 新增 `jal` 短命令；`jal .` 可直接扫描当前项目，同时保留 `java-audit scan` 兼容入口
+- 新增 `s`、`d`、`r`、`b` 子命令别名及常用扫描参数的短选项；`jal . -O` 可在扫描完成后直接打开报告
 - 新增匿名语料库试点：4 类规则、12 个 vulnerable/safe/edge Maven 案例及标准答案
 - 新增零依赖语料结构与匿名化校验器，覆盖清单重复、路径越界、行号漂移和全目录敏感信息检查
 - 新增语料评测器，按规则与案例统计 TP、FP、FN、TN、Precision、Recall 和 F1

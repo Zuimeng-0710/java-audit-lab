@@ -7,6 +7,7 @@ import platform
 import shutil
 import sys
 import tempfile
+import webbrowser
 from pathlib import Path
 
 from . import __version__
@@ -38,39 +39,49 @@ from .surface import collect_surface
 
 RUNNERS = {"builtin": BuiltinRunner, "secrets": SecretsRunner, "taint": TaintRunner, "semgrep": SemgrepRunner, "spotbugs": SpotBugsRunner, "dependency-check": DependencyCheckRunner, "codeql": CodeQLRunner}
 
+COMMANDS = {"scan", "s", "doctor", "d", "rules", "r", "benchmark", "bench", "b"}
+
+
+def _normalize_argv(argv: list[str]) -> list[str]:
+    """Allow `jal .` while keeping the explicit subcommands compatible."""
+    if not argv or argv[0] in {"-h", "--help", "-V", "--version"} or argv[0] in COMMANDS:
+        return argv
+    return ["scan", *argv]
+
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="java-audit", description="面向 Java 学习者的可复核代码审计练习工具")
-    parser.add_argument("--version", action="version", version=__version__)
+    parser = argparse.ArgumentParser(prog="jal", description="面向 Java 学习者的可复核代码审计练习工具")
+    parser.add_argument("-V", "--version", action="version", version=__version__)
     subparsers = parser.add_subparsers(dest="command", required=True)
-    scan = subparsers.add_parser("scan", help="扫描 Java 项目并生成 JSON、SARIF 和学习报告")
+    scan = subparsers.add_parser("scan", aliases=["s"], help="扫描 Java 项目并生成 JSON、SARIF 和学习报告")
     scan.add_argument("target", help="Java 项目目录")
     scan.add_argument("-o", "--output", default="audit-report", help="报告目录")
-    scan.add_argument("--scanners", help="逗号分隔的扫描器列表；默认读取项目配置")
-    scan.add_argument("--config", help=".java-audit.yml 或 JSON 配置路径")
-    scan.add_argument("--no-cache", action="store_true", help="禁用增量扫描缓存")
-    scan.add_argument("--sarif", action="append", default=[], help="额外导入 SARIF，可重复使用")
+    scan.add_argument("-O", "--open", dest="open_report", action="store_true", help="扫描完成后打开 HTML 报告")
+    scan.add_argument("-s", "--scanners", help="逗号分隔的扫描器列表；默认读取项目配置")
+    scan.add_argument("-c", "--config", help=".java-audit.yml 或 JSON 配置路径")
+    scan.add_argument("-n", "--no-cache", action="store_true", help="禁用增量扫描缓存")
+    scan.add_argument("-S", "--sarif", action="append", default=[], help="额外导入 SARIF，可重复使用")
     scan.add_argument("--spotbugs-xml", action="append", default=[], help="导入已有 SpotBugs XML，可重复使用")
     scan.add_argument("--dependency-check-json", action="append", default=[], help="导入已有 Dependency-Check JSON，可重复使用")
-    scan.add_argument("--baseline", help="上一份 report.json，用于识别新增、已有和已修复发现")
-    scan.add_argument("--review-file", help="从浏览器导出的 review.json")
-    scan.add_argument("--ai", action="store_true", help="使用环境变量配置的兼容 API 生成分层解释")
-    scan.add_argument("--ai-level", choices=("beginner", "intermediate", "advanced"))
-    scan.add_argument("--fail-on", choices=("none", "critical", "high", "medium", "low"), help="用于 CI 的退出阈值，只计算基线新增发现")
-    scan.add_argument("--yes", action="store_true", help="跳过交互式扫描范围确认（CI/脚本环境）")
-    scan.add_argument("--exclude", action="append", default=[], help="排除路径（glob 风格，如 'src/test/*'）；可重复使用，与 .java-audit.yml 中 exclude_paths 合并")
-    scan.add_argument("--workers", type=int, help="并行扫描进程数；默认取 min(8, CPU 核心数)")
-    scan.add_argument("--progress", action="store_true", default=None, help="强制开启进度日志（默认在 TTY 环境自动开启）")
-    scan.add_argument("--no-progress", dest="progress", action="store_false", help="禁用进度日志")
-    scan.add_argument("--rules", action="append", default=[], help="外部规则文件路径（YAML 或 JSON，可重复使用）；自动与内置规则合并")
-    scan.add_argument("--diff", nargs="?", const="WORKING", default=None, metavar="REF",
+    scan.add_argument("-b", "--baseline", help="上一份 report.json，用于识别新增、已有和已修复发现")
+    scan.add_argument("-R", "--review-file", help="从浏览器导出的 review.json")
+    scan.add_argument("-a", "--ai", action="store_true", help="使用环境变量配置的兼容 API 生成分层解释")
+    scan.add_argument("-l", "--ai-level", choices=("beginner", "intermediate", "advanced"))
+    scan.add_argument("-f", "--fail-on", choices=("none", "critical", "high", "medium", "low"), help="用于 CI 的退出阈值，只计算基线新增发现")
+    scan.add_argument("-y", "--yes", action="store_true", help="跳过交互式扫描范围确认（CI/脚本环境）")
+    scan.add_argument("-x", "--exclude", action="append", default=[], help="排除路径（glob 风格，如 'src/test/*'）；可重复使用，与 .java-audit.yml 中 exclude_paths 合并")
+    scan.add_argument("-j", "--workers", type=int, help="并行扫描进程数；默认取 min(8, CPU 核心数)")
+    scan.add_argument("-p", "--progress", action="store_true", default=None, help="强制开启进度日志（默认在 TTY 环境自动开启）")
+    scan.add_argument("-q", "--no-progress", dest="progress", action="store_false", help="禁用进度日志")
+    scan.add_argument("-r", "--rules", action="append", default=[], help="外部规则文件路径（YAML 或 JSON，可重复使用）；自动与内置规则合并")
+    scan.add_argument("-d", "--diff", nargs="?", const="WORKING", default=None, metavar="REF",
                       help="Git 增量审计：不带参数比较工作区未提交变更，带参数与指定分支或提交比较（如 main）")
-    scan.add_argument("--commit", metavar="REF", help="只分析某次提交引入的变更（如 HEAD~1）")
-    scan.add_argument("--changed-only", action="store_true", help="增量模式下只分析变更文件，不纳入依赖闭包")
-    subparsers.add_parser("doctor", help="检查本机扫描器与运行环境")
-    rules = subparsers.add_parser("rules", help="列出内置教学规则")
+    scan.add_argument("-C", "--commit", metavar="REF", help="只分析某次提交引入的变更（如 HEAD~1）")
+    scan.add_argument("-m", "--changed-only", action="store_true", help="增量模式下只分析变更文件，不纳入依赖闭包")
+    subparsers.add_parser("doctor", aliases=["d"], help="检查本机扫描器与运行环境")
+    rules = subparsers.add_parser("rules", aliases=["r"], help="列出内置教学规则")
     rules.add_argument("--json", action="store_true")
-    benchmark = subparsers.add_parser("benchmark", help="运行内置规则回归基准")
+    benchmark = subparsers.add_parser("benchmark", aliases=["bench", "b"], help="运行内置规则回归基准")
     benchmark.add_argument("--manifest", help="基准清单 JSON")
     return parser
 
@@ -299,6 +310,11 @@ def _scan(args: argparse.Namespace) -> int:
     print(f"\n完成：{len(findings)} 条待复核发现；新增 {len(baseline['new'])}；已修复 {len(baseline['fixed'])}")
     print(f"审计阶段：已完成 {progress['completed']}/{progress['total']}，部分完成 {progress['partial']}")
     print(f"JSON: {json_path}\nSARIF: {output_dir / 'report.sarif'}\nHTML: {html_path}\nMarkdown: {md_path}")
+    if args.open_report:
+        try:
+            webbrowser.open(html_path.resolve().as_uri())
+        except (OSError, ValueError) as exc:
+            print(f"[报告] 无法自动打开：{exc}", file=sys.stderr)
     fail_on = args.fail_on or str(config.get("fail_on", "none"))
     if fail_on != "none":
         new = set(baseline["new"])
@@ -309,12 +325,13 @@ def _scan(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
-    if args.command == "doctor":
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    args = build_parser().parse_args(_normalize_argv(raw_argv))
+    if args.command in {"doctor", "d"}:
         return _doctor()
-    if args.command == "rules":
+    if args.command in {"rules", "r"}:
         return _list_rules(args.json)
-    if args.command == "benchmark":
+    if args.command in {"benchmark", "bench", "b"}:
         manifest = Path(args.manifest).resolve() if args.manifest else Path(__file__).resolve().parent / "benchmarks" / "manifest.json"
         try:
             result = run_benchmark(manifest)

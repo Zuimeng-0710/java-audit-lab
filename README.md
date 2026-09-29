@@ -2,46 +2,58 @@
 
 ![Java Audit Lab](docs/assets/readme-hero-v2.png)
 
-[简体中文](#java-audit-lab) · [English](#english-summary)
+[简体中文](README.md) · [English](README_EN.md)
 
-[![Release](https://img.shields.io/github/v/release/Zuimeng-0710/java-audit-lab?style=flat-square&color=6366f1)](https://github.com/Zuimeng-0710/java-audit-lab/releases)
+[![Release](https://img.shields.io/github/v/release/Zuimeng-0710/java-audit-lab?style=flat-square&color=2563eb)](https://github.com/Zuimeng-0710/java-audit-lab/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/Zuimeng-0710/java-audit-lab/ci.yml?branch=main&style=flat-square&label=tests)](https://github.com/Zuimeng-0710/java-audit-lab/actions)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-0ea5e9?style=flat-square)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-10b981?style=flat-square)](LICENSE)
+[![Rules](https://img.shields.io/badge/Java_rules-12-f97316?style=flat-square)](#当前能力)
 
-[![Rules](https://img.shields.io/badge/Java_rules-12-f97316?style=flat-square)](#capabilities)
-[![Reports](https://img.shields.io/badge/reports-HTML%20%7C%20JSON%20%7C%20SARIF%20%7C%20Markdown-2563eb?style=flat-square)](#quick-start)
+**把扫描命中整理成可复核的 Java 安全证据。**
 
-[快速开始](#quick-start) · [核心能力](#capabilities) · [证据模型](#evidence-model) · [扫描器](#scanners) · [参与开发](#development)
+[快速开始](#快速开始) · [使用场景](#适合谁使用) · [当前能力](#当前能力) · [路线图](#路线图) · [参与项目](#参与项目)
 
 </div>
 
 # Java Audit Lab
 
-Java Audit Lab 是面向 Java 学习者、开发者和安全审计人员的开源代码审计工作台。它把扫描命中整理成可复核的证据链，帮助你理解“为什么可疑、还缺什么证据、如何人工验证”。
+Java Audit Lab 是面向 **Java 学习者、开发者和安全审计人员** 的开源代码审计工作台。它把规则命中、数据流、权限声明和人工判断组织成一条可回看的证据链，帮助使用者回答：
+
+- 问题从哪个入口进入？
+- 输入如何到达危险操作？
+- 中间是否存在净化、白名单或权限控制？
+- 目前能证明什么，还有哪些条件缺少证据？
+- 修复后问题是否真正消失？
 
 > [!IMPORTANT]
 > 扫描结果是待人工复核的安全线索，不等于已确认漏洞。请只分析自己拥有或已获得明确授权的项目与环境。
 
-## 为什么使用 Java Audit Lab
+## 这个项目解决什么问题
 
-普通扫描器擅长找到模式，但学习者和审计人员仍要回答：输入从哪里来、经过哪些代码、是否存在净化、接口需要什么权限，以及什么证据能推翻漏洞假设。
-
-| 传统扫描输出 | Java Audit Lab |
+| 常见困难 | Java Audit Lab 的处理方式 |
 |---|---|
-| 一条规则命中 | 入口、来源、传播、终点、净化反证与权限证据 |
-| 命中即风险 | 明确区分已证明、推测、缺失和无法解析的路径 |
-| 只看本次结果 | 基线对比、Git 增量审计与修复复测 |
-| 报告阅读结束 | 保存人工结论、依据与信心，形成复核档案 |
-| 工具各说各话 | 归并 Semgrep、SpotBugs、Dependency-Check、CodeQL 与 SARIF |
+| 规则命中了，但不知道为什么 | 同时展示入口、Source、传播、Sanitizer、Sink 和代码位置 |
+| 工具把猜测写成确定漏洞 | 区分**已证明、推测、缺失、无法解析**四类证据状态 |
+| 不清楚接口是否需要登录或角色 | 生成端点权限矩阵，并标出权限证据来自注解、配置还是拦截器 |
+| 扫描器结果分散 | 归并内置规则、Semgrep、SpotBugs、Dependency-Check、CodeQL 和 SARIF |
+| 修复后无法确认结果 | 使用基线和 Git 增量审计识别新增、已有、已修复与同规则残留 |
+| 学习时只看到结论 | 报告提供漏洞成立五问、反证提示、人工结论和信心记录 |
 
-<a id="quick-start"></a>
+## 适合谁使用
 
-## ⚡ 快速开始
+| 使用者 | 可以完成的事情 |
+|---|---|
+| Java 安全学习者 | 从真实代码位置学习 Source → Propagation → Sink，并练习排除误报 |
+| Java 开发者 | 在提交或合并前检查本次修改、权限变化和高风险调用 |
+| 安全审计人员 | 汇总多个扫描器证据，记录人工结论并生成可交付报告 |
+| 规则贡献者 | 使用 vulnerable / safe / edge 语料验证新规则和误报边界 |
 
-需要 Python 3.10 或更新版本。基础扫描、报告和语料评测没有第三方 Python 依赖。
+Java Audit Lab 当前适合作为学习、初筛和人工复核工作台。需要完整跨方法、跨模块数据流证明的大型企业项目，应结合 CodeQL 等分析引擎并由安全人员确认。
 
-### 从源码安装
+## 快速开始
+
+### 1. 安装当前源码版本
 
 ```bash
 git clone https://github.com/Zuimeng-0710/java-audit-lab.git
@@ -49,93 +61,105 @@ cd java-audit-lab
 python -m pip install -e .
 ```
 
-### 从 Release wheel 安装
+需要 Python 3.10 或更新版本。基础扫描和报告生成没有第三方 Python 依赖。
 
-从 [Releases](https://github.com/Zuimeng-0710/java-audit-lab/releases) 下载 wheel 后执行：
-
-```bash
-python -m pip install java_audit_lab-1.8.0-py3-none-any.whl
-```
-
-### 第一次扫描
+### 2. 一条命令扫描并打开报告
 
 ```bash
-java-audit doctor
-java-audit scan /path/to/java-project -o audit-report --yes
+jal . -O
 ```
 
-Windows PowerShell 示例：
+`.` 表示当前 Java 项目，`-O` 表示完成后打开 HTML 报告。只生成报告时运行：
 
-```powershell
-java-audit scan "D:\projects\demo" -o audit-report --yes
-Start-Process audit-report\report.html
+```bash
+jal .
 ```
+
+旧命令 `java-audit scan .` 继续兼容。已发布的 v1.8.0 wheel 可继续使用旧命令；`jal` 是当前源码版和下一版本的推荐入口。
+
+### 常用短命令
+
+| 目的 | 命令 |
+|---|---|
+| 扫描当前项目 | `jal .` |
+| 扫描并打开报告 | `jal . -O` |
+| 检查本机环境 | `jal d` |
+| 查看内置规则 | `jal r` |
+| 运行规则基准 | `jal b` |
+| 只用指定扫描器 | `jal . -s builtin,secrets,taint` |
+| 审计未提交修改 | `jal . -d` |
+| 与 main 分支比较 | `jal . -d main` |
+| 审计单次提交 | `jal . -C HEAD~1` |
+| 对比上一份报告 | `jal . -b old/report.json` |
+| CI 中阻止新增高危问题 | `jal . -f high -y` |
+
+完整参数：
+
+```bash
+jal -h
+jal s -h
+```
+
+### 报告文件
 
 | 文件 | 用途 |
 |---|---|
-| `report.html` | 离线互动复核工作台：筛选、证据链、五问和人工结论 |
-| `report.json` | 完整证据模型，可用于基线、自动化和二次开发 |
-| `report.sarif` | SARIF 2.1，可接入代码托管平台和其他安全工具 |
-| `report.md` | 便于粘贴到工单、审计文档和 Pull Request |
+| `report.html` | 离线交互复核：筛选、证据链、五问、人工结论与导出 |
+| `report.json` | 完整结构化证据，可用于基线和二次开发 |
+| `report.sarif` | SARIF 2.1，可接入代码托管平台和安全工具 |
+| `report.md` | 适合工单、审计文档和 Pull Request |
 
-## 🧭 审计工作流
+## 审计工作流
 
-#### 🔵 ① 发现与建模
+### 🔵 ① 发现与建模
 
-| `1.1` 项目画像 | `1.2` 入口与信任边界 | `1.3` Source / Sink 建模 | `1.4` 数据流扫描 |
+| `1.1` 项目画像 | `1.2` 入口与信任边界 | `1.3` Source / Sink | `1.4` 数据流扫描 |
 |:---:|:---:|:---:|:---:|
 | 框架、依赖、攻击面 | 路由、身份、数据归属 | 输入源、危险操作 | 传播、净化、不确定路径 |
 
-#### 🟠 ② 验证与泛化
+### 🟠 ② 验证与泛化
 
-| `2.1` 成立条件验证 | `2.2` 同类模式泛化 | `2.3` 反证与绕过检查 |
+| `2.1` 成立条件 | `2.2` 同类模式 | `2.3` 反证与绕过 |
 |:---:|:---:|:---:|
 | 触发条件、输入可控性 | 相似调用、关联文件 | 白名单、权限、安全控制 |
 
-#### 🟢 ③ 结论与复测
+### 🟢 ③ 结论与复测
 
 | `3.1` 人工结论 | `3.2` 修复复测 | `3.3` 结果归档 |
 |:---:|:---:|:---:|
 | 判定、依据、信心 | 基线对比、回归验证 | 报告、结论、审计轨迹 |
 
-> [!NOTE]
-> 阶段按 **发现 → 验证 → 结论** 推进。每一步都记录已有证据和缺失证据；扫描结果或人工回答可以推进状态，AI 解释只作为辅助说明。
+每个阶段都记录已有证据和缺失证据。扫描结果或人工回答可以推进状态，AI 解释只作为辅助说明。
 
 ### 漏洞成立五问
 
 | 检查点 | 核心问题 | 期望证据 |
 |---|---|---|
-| **01 · 入口** | 外部入口和 HTTP 路径是什么？ | 路由、Controller、消息消费者或任务入口 |
-| **02 · 权限** | 调用需要什么身份、角色或数据归属？ | Security 配置、权限注解、拦截器或所有权校验 |
-| **03 · 传播** | 输入如何到达危险操作？ | Source、赋值与调用传播、最终 Sink |
-| **04 · 反证** | 已确认哪些净化、白名单或安全控制？ | 参数化查询、规范化、编码、白名单或边界检查 |
-| **05 · 缺口** | 哪些成立条件仍然缺少证据？ | 未解析调用、动态配置、运行时条件或待人工确认项 |
+| **入口** | 外部入口和 HTTP 路径是什么？ | 路由、Controller、消息消费者或任务入口 |
+| **权限** | 调用需要什么身份、角色或数据归属？ | Security 配置、权限注解、拦截器或所有权校验 |
+| **传播** | 输入如何到达危险操作？ | Source、赋值与调用传播、最终 Sink |
+| **反证** | 已确认哪些净化、白名单或安全控制？ | 参数化查询、规范化、编码、白名单或边界检查 |
+| **缺口** | 哪些成立条件仍然缺少证据？ | 未解析调用、动态配置、运行时条件或人工确认项 |
 
-只有五项都有可定位的代码或配置依据时，工具才建议形成漏洞结论；否则保留为待复核线索并明确标记证据缺口。
+## 当前能力
 
-<a id="capabilities"></a>
+| 状态 | 能力 | 当前范围 |
+|---|---|---|
+| ✅ 可用 | 教学规则 | 12 类 Java 规则，覆盖 SQL、命令、路径、XXE、反序列化、SSRF、表达式、弱哈希、认证与敏感日志 |
+| ✅ 可用 | 配置凭据扫描 | YAML、Properties、JSON、`.env`；证据和指纹不保存原始密钥 |
+| 🧪 Beta | 方法内污点分析 | 请求参数、赋值传播、净化反证和危险终点 |
+| ✅ 可用 | 攻击面画像 | Controller、Filter、Interceptor、Security、上传、消息消费者、定时任务、MyBatis、JPA |
+| 🧪 Beta | 端点权限矩阵 | Spring Security、Shiro、方法级注解和 Spring MVC Interceptor |
+| ✅ 可用 | Git 增量审计 | 变更文件、依赖闭包、权限放宽、同类新位置和修复残留 |
+| ✅ 可用 | 多引擎归并 | SARIF、Semgrep、SpotBugs、Dependency-Check 和 CodeQL |
+| ✅ 可用 | 复核档案 | 浏览器本地保存、导入导出、基线新增与已修复分类 |
+| 🧪 Pilot | 匿名评测语料 | SQL 注入、SSRF、路径遍历和硬编码凭据的 vulnerable / safe / edge 案例 |
 
-## ✨ 核心能力
+每条发现会标注 `production`、`test`、`example` 或 `generated` 范围，避免测试与示例代码稀释生产风险。
 
-| 能力 | 当前实现 |
-|---|---|
-| 教学规则 | 12 类零依赖 Java 规则，覆盖 SQL、命令、路径、XXE、反序列化、SSRF、表达式、弱哈希、认证与敏感日志 |
-| 方法内污点 | 数据驱动 Source、Sink、Sanitizer 模型，追踪请求参数、赋值和净化反证 |
-| 配置凭据 | 扫描 YAML、Properties、JSON、`.env` 等配置；证据和指纹不保存原始值 |
-| 攻击面画像 | Controller、Filter、Interceptor、Security、上传、消息消费者、定时任务、MyBatis 与 JPA |
-| 权限矩阵 | Spring Security、Shiro、方法级注解和 Spring MVC 自定义拦截器 |
-| 增量审计 | 变更文件、依赖闭包、权限放宽、同类新位置和修复残留 |
-| 多引擎证据 | 归并 SARIF、Semgrep、SpotBugs、Dependency-Check 和 CodeQL 结果 |
-| 复核档案 | 浏览器本地保存、导出、重新导入、基线新增与已修复分类 |
-| 匿名语料 | vulnerable / safe / edge 标准答案、严格行号和防“假绿”评测 |
+## 证据模型
 
-每条发现会区分 `production`、`test`、`example` 和 `generated` 范围，避免测试与示例代码稀释生产风险。
-
-<a id="evidence-model"></a>
-
-## 🔎 证据模型
-
-Java Audit Lab 不虚构完整调用链。每条发现都保存统一证据记录：
+Java Audit Lab 不会为了让报告看起来完整而虚构调用链。每条发现统一记录：
 
 ```json
 {
@@ -150,173 +174,118 @@ Java Audit Lab 不虚构完整调用链。每条发现都保存统一证据记�
 }
 ```
 
-| 路径等级 | 含义 |
+| 状态 | 含义 |
 |---|---|
-| **已证明** | CodeQL 或 SARIF `codeFlows` 提供的扫描器级数据流 |
-| **推测** | 内置规则或方法内文本分析形成的保守候选 |
-| **缺失** | 没有足够路径证据，工具不会自动补写 |
-| **无法解析** | 反射、动态分派或其他动态调用位于唯一候选路径上 |
+| **已证明** | 扫描器提供明确路径或代码配置提供直接证据 |
+| **推测** | 内置规则或局部文本分析形成的保守候选 |
+| **缺失** | 当前没有足够证据，工具不会自动补写 |
+| **无法解析** | 反射、动态分派或运行时配置阻断静态路径 |
 
-## 🔐 端点权限矩阵
+## 扫描器与集成
 
-报告按“接口 × 方法 × 身份要求 × 角色/权限 × 危险操作 × 证据状态”展示访问控制：
+外部扫描器没有安装时，其他扫描器和报告仍会继续运行。
 
-| 证据来源 | 状态 |
-|---|---|
-| `@PreAuthorize`、`@Secured`、`@RolesAllowed`、Shiro 注解 | 已证明 |
-| `SecurityFilterChain` matcher、Shiro filter chain | 已证明（配置级） |
-| 已验证令牌读取、校验和拒绝路径的 MVC Interceptor | 已证明 |
-| 仅根据鉴权语义名称识别的 Interceptor | 推测 |
-| 无匹配声明 | 缺失，需要人工确认 |
-
-明确公开的接口可以在 `.java-audit.yml` 中声明：
-
-```yaml
-public_endpoints:
-  - /login
-  - /health
-```
-
-<a id="scanners"></a>
-
-## 🧰 扫描器
-
-未安装的外部扫描器不会阻止其他扫描器和报告生成。
-
-| 扫描器 | 输入条件 | 作用 |
+| 扫描器 | 条件 | 提供的证据 |
 |---|---|---|
-| `builtin` | Java 源码 | 可解释教学规则与局部路径候选 |
-| `secrets` | YAML、Properties、JSON、`.env` 等 | 查找字面量凭据并全程脱敏 |
-| `taint` | Java 源码 | 方法内输入、赋值、净化与危险终点传播 |
-| Semgrep | 安装 `semgrep` | 运行随包发布的本地 Java 规则 |
-| SpotBugs | 安装 CLI，项目已有 class/JAR | 字节码缺陷；建议配合 Find Security Bugs |
-| Dependency-Check | 安装 CLI | 已公开的第三方依赖漏洞 |
-| CodeQL | 安装 CLI | 跨文件数据流与安全扩展查询 |
+| `builtin` | 内置 | 教学规则与局部路径候选 |
+| `secrets` | 内置 | 脱敏的配置凭据线索 |
+| `taint` | 内置 | 方法内输入、传播、净化与终点 |
+| Semgrep | 安装 `semgrep` | 本地 Java 规则结果 |
+| SpotBugs | 安装 CLI，项目已有 class/JAR | 字节码缺陷 |
+| Dependency-Check | 安装 CLI | 第三方依赖公开漏洞 |
+| CodeQL | 安装 CLI | 跨文件数据流与安全查询 |
+
+导入现有结果：
 
 ```bash
-java-audit scan . -o report \
-  --scanners builtin,secrets,taint,semgrep,spotbugs,dependency-check,codeql \
-  --yes
+jal . -s builtin -S codeql.sarif
 ```
 
-已有报告可以直接导入：
+SpotBugs XML 和 Dependency-Check JSON 仍可通过 `--spotbugs-xml` 与 `--dependency-check-json` 导入。
 
-```bash
-java-audit scan . -o report --scanners builtin \
-  --sarif codeql.sarif \
-  --spotbugs-xml target/spotbugsXml.xml \
-  --dependency-check-json dependency-check-report.json \
-  --yes
-```
+## 项目配置
 
-## 🌿 Git 增量审计
-
-```bash
-java-audit scan . -o report --diff
-java-audit scan . -o report --diff main
-java-audit scan . -o report --commit HEAD~1
-java-audit scan . -o report --commit HEAD --baseline old-report/report.json
-```
-
-增量报告会回答：哪些发现位于变更行、权限是否被删除或放宽、修复后是否仍有同规则残留，以及哪些上下文可能受到影响。
-
-<a id="project-config"></a>
-
-## ⚙️ 项目配置
-
-复制 `.java-audit.example.yml` 为待审计项目根目录下的 `.java-audit.yml`：
+将 [`.java-audit.example.yml`](.java-audit.example.yml) 复制到待审计项目根目录并改名为 `.java-audit.yml`：
 
 ```yaml
-scanners: [builtin, secrets, taint, semgrep, spotbugs, dependency-check, codeql]
+scanners: [builtin, secrets, taint]
 public_endpoints: [/login, /health]
 fail_on: high
-ai_level: beginner
 cache: true
 exclude_paths: [src/test/*, generated/*]
 extra_rules: [.java-audit/rules/team-rules.yaml]
 ```
 
-命令行参数覆盖配置文件。使用 `--no-cache` 可强制重新扫描，`--exclude "glob"` 可临时排除目录。
+命令行参数覆盖配置文件。放在 `.java-audit/rules/` 中的 YAML 或 JSON 规则会自动加载。
 
-### 基线与人工复核
+## 可选 AI 解释
 
-```bash
-java-audit scan . -o report-next --baseline report/report.json
-java-audit scan . -o report-next --review-file review.json
-java-audit scan . -o report-ci --baseline old-report.json --fail-on high --yes
-```
-
-报告搜索支持组合条件：`cwe:89 path:controller scanner:codeql priority:70`。
-
-## 🤖 可选 AI 解释
-
-AI 只接收单条发现的脱敏证据，用于生成学习解释，不能把发现升级为“已确认漏洞”。接口兼容 `/chat/completions`：
-
-```powershell
-$env:JAVA_AUDIT_AI_ENDPOINT="http://localhost:11434/v1"
-$env:JAVA_AUDIT_AI_MODEL="your-model"
-$env:JAVA_AUDIT_AI_KEY=""
-java-audit scan . -o report --scanners builtin --ai --ai-level beginner --yes
-```
-
-解释层级：`beginner`、`intermediate`、`advanced`。
-
-## 🧪 匿名评测语料
-
-`corpus/` 当前包含 SQL 注入、SSRF、路径遍历和硬编码凭据的 vulnerable、safe、edge 试点案例：
+AI 只接收单条发现的脱敏证据，用来生成学习解释，不能把发现升级为“已确认漏洞”。配置兼容 `/chat/completions` 的接口后运行：
 
 ```bash
-python corpus/tools/validate_corpus.py
-python corpus/tools/evaluate_corpus.py --strict-locations
+jal . -a -l beginner
 ```
 
-匿名校验不会回显命中的敏感内容。train 样本上的高分只证明评测流水线和当前回归成立，不代表真实项目准确率。详见 [corpus/README.md](corpus/README.md)。
+支持 `beginner`、`intermediate`、`advanced` 三个解释层级。
 
-<a id="development"></a>
+## 路线图
 
-## 🧑‍💻 参与开发
+路线图表示当前开发方向，不代表已经实现或承诺具体发布日期。
+
+### 近期：下一版本
+
+- [x] `jal` 短命令、默认扫描和常用参数别名
+- [x] 完整中英文 README
+- [ ] 将匿名语料扩展到更多规则、真实脱敏案例和独立 holdout 集
+- [ ] 为 CLI 增加稳定的机器可读摘要和更清晰的退出码文档
+- [ ] 增加 GitHub Actions 示例，让 Pull Request 自动执行增量审计
+
+### 中期：分析能力
+
+- [ ] Controller → Service → Mapper 的跨方法数据流
+- [ ] 更精确的调用图、接口实现和继承关系解析
+- [ ] Spring WebFlux、Dubbo、gRPC 和更多消息框架入口
+- [ ] 对象级权限与 IDOR 场景的所有权证据
+- [ ] 规则抑制、风险接受和审计结论的团队配置
+
+### 长期：可扩展工作台
+
+- [ ] 稳定的扫描器插件 API 和第三方规则包
+- [ ] VS Code / IntelliJ 结果跳转与本地复核
+- [ ] 多人共享复核档案和审计差异
+- [ ] 大型项目的持久化索引与增量调用图
+- [ ] 在不改变证据状态的前提下，用 AI 辅助生成验证步骤和修复建议
+
+欢迎通过 Issue 说明真实 Java 项目中的框架、误报或漏报案例。路线图优先级将以可复现样本和回归测试为依据。
+
+## 当前边界
+
+- `builtin` 与 `taint` 目前不提供完整的跨方法、跨模块路径证明。
+- 未识别到权限声明表示证据缺失，不代表接口一定没有访问控制。
+- 反射、动态分派、运行时配置和生成源码可能降低静态分析覆盖率。
+- SpotBugs 需要先构建项目；Dependency-Check 首次更新漏洞库可能耗时较长。
+- AI 解释可能错误，最终判断应回到源码、配置和扫描器证据。
+- 内置 benchmark 和 train 语料用于回归，不代表真实项目准确率。
+
+完整版本变化见 [CHANGELOG.md](CHANGELOG.md)。
+
+## 参与项目
 
 ```bash
 python -m unittest discover -s tests -v
-python -m audit benchmark
+jal b
 python corpus/tools/validate_corpus.py
 python corpus/tools/evaluate_corpus.py --strict-locations
-python -m compileall -q audit
 ```
 
-规则贡献需要同时提供危险示例、安全示例、容易误报的边界示例和复核条件。参见 [CONTRIBUTING.md](CONTRIBUTING.md)。安全问题请按 [SECURITY.md](SECURITY.md) 私密报告。
+贡献规则时，请同时提供：
 
-### 项目结构
+1. 应当命中的危险样本；
+2. 不应命中的安全样本；
+3. 容易误报的边界样本；
+4. 人工复核条件和修复建议。
 
-```text
-java-audit-lab/
-├─ audit/              # CLI、证据模型、报告和扫描器适配器
-├─ corpus/             # 匿名语料、标准答案、校验器和评测器
-├─ rules/              # 可扩展规则与 Semgrep 规则
-├─ examples/           # 安全、不安全、权限与增量示例
-├─ tests/              # 解析器、规则、报告、权限和语料回归
-├─ docs/               # 设计与研究文档
-└─ .github/workflows/  # CI
-```
-
-## 已知边界
-
-- `builtin` 与 `taint` 当前不提供完整的跨方法、跨模块数据流证明；Controller → Service → Mapper 等链路建议结合 CodeQL。
-- 入口与权限解析基于常见框架模型；未命中代表证据缺失，不代表接口一定没有控制。
-- 反射、动态分派、运行时配置和生成源码可能降低静态分析覆盖率。
-- SpotBugs 需要先构建项目；Dependency-Check 首次更新漏洞数据库可能需要网络和较长时间。
-- AI 解释可能错误，人工结论应始终回到原始代码和扫描证据。
-- 内置基准和 train 语料用于回归，不应当作为真实世界准确率声明。
-
-完整变化见 [CHANGELOG.md](CHANGELOG.md)。
-
-<a id="english-summary"></a>
-
-## English summary
-
-Java Audit Lab is an open-source, evidence-driven Java security review workbench for learners, developers, and security auditors. It turns scanner findings into reviewable evidence covering entry points, sources, propagation, sinks, sanitizers, authorization, uncertainty, and remediation verification.
-
-Scan results are review candidates rather than confirmed vulnerabilities. Review only projects and environments you own or are explicitly authorized to assess.
+参见 [CONTRIBUTING.md](CONTRIBUTING.md)。安全问题请按照 [SECURITY.md](SECURITY.md) 私密报告。
 
 ## License
 
