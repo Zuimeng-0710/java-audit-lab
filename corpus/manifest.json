@@ -1,0 +1,94 @@
+{
+  "version": "0.1",
+  "split": "train",
+  "generated": "2026-09-29",
+  "scanners": [
+    "builtin"
+  ],
+  "cases": [
+    {
+      "case_id": "SQL-001",
+      "category": "sql-injection",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "path": "cases/sql-injection/SQL-001-vulnerable"
+    },
+    {
+      "case_id": "SQL-002",
+      "category": "sql-injection",
+      "expected": "safe",
+      "variant": "safe",
+      "path": "cases/sql-injection/SQL-002-safe"
+    },
+    {
+      "case_id": "SQL-003",
+      "category": "sql-injection",
+      "expected": "safe",
+      "variant": "edge",
+      "path": "cases/sql-injection/SQL-003-edge"
+    },
+    {
+      "case_id": "SSRF-001",
+      "category": "ssrf",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "path": "cases/ssrf/SSRF-001-vulnerable"
+    },
+    {
+      "case_id": "SSRF-002",
+      "category": "ssrf",
+      "expected": "safe",
+      "variant": "safe",
+      "path": "cases/ssrf/SSRF-002-safe"
+    },
+    {
+      "case_id": "SSRF-003",
+      "category": "ssrf",
+      "expected": "safe",
+      "variant": "edge",
+      "path": "cases/ssrf/SSRF-003-edge"
+    },
+    {
+      "case_id": "PATH-001",
+      "category": "path-traversal",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "path": "cases/path-traversal/PATH-001-vulnerable"
+    },
+    {
+      "case_id": "PATH-002",
+      "category": "path-traversal",
+      "expected": "safe",
+      "variant": "safe",
+      "path": "cases/path-traversal/PATH-002-safe"
+    },
+    {
+      "case_id": "PATH-003",
+      "category": "path-traversal",
+      "expected": "safe",
+      "variant": "edge",
+      "path": "cases/path-traversal/PATH-003-edge"
+    },
+    {
+      "case_id": "SECRET-001",
+      "category": "secrets",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "path": "cases/secrets/SECRET-001-vulnerable"
+    },
+    {
+      "case_id": "SECRET-002",
+      "category": "secrets",
+      "expected": "safe",
+      "variant": "safe",
+      "path": "cases/secrets/SECRET-002-safe"
+    },
+    {
+      "case_id": "SECRET-003",
+      "category": "secrets",
+      "expected": "safe",
+      "variant": "edge",
+      "path": "cases/secrets/SECRET-003-edge"
+    }
+  ]
+}

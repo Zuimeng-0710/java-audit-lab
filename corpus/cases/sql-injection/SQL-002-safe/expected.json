@@ -1,0 +1,20 @@
+{
+  "case_id": "SQL-002",
+  "title": "PreparedStatement 参数绑定",
+  "category": "sql-injection",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "jdbc"
+  ],
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "外部输入通过 setString 绑定，不进入 SQL 文本。",
+  "expected": "safe",
+  "forbidden_rules": [
+    "JAL-SQL-001"
+  ],
+  "security_controls": [
+    "PreparedStatement 占位符绑定"
+  ]
+}

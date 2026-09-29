@@ -1,0 +1,20 @@
+{
+  "case_id": "SQL-003",
+  "title": "白名单排序字段 + StringBuilder 拼接",
+  "category": "sql-injection",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "jdbc"
+  ],
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "排序字段只能是三个常量之一，SQL 结构不受外部输入影响。",
+  "expected": "safe",
+  "forbidden_rules": [
+    "JAL-SQL-001"
+  ],
+  "security_controls": [
+    "switch 白名单收敛动态片段"
+  ]
+}

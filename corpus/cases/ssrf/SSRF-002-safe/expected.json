@@ -1,0 +1,21 @@
+{
+  "case_id": "SSRF-002",
+  "title": "固定主机字面量 + 编码后的查询参数",
+  "category": "ssrf",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "http-client"
+  ],
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "用户输入只进入 query 参数且经过 URLEncoder 编码。",
+  "expected": "safe",
+  "forbidden_rules": [
+    "JAL-SSRF-001",
+    "JAL-SSRF-101"
+  ],
+  "security_controls": [
+    "出站目标为字面量常量"
+  ]
+}

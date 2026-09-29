@@ -1,0 +1,28 @@
+{
+  "case_id": "SSRF-001",
+  "title": "用户提供的 URL 直接作为出站请求目标",
+  "category": "ssrf",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "http-client"
+  ],
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "目标主机、协议完全由请求参数控制。",
+  "expected": "vulnerable",
+  "expected_rules": [
+    "JAL-SSRF-001"
+  ],
+  "evidence_level": "inferred",
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/ssrf/WebhookController.java",
+      "line": 21
+    },
+    {
+      "path": "src/main/java/lab/corpus/ssrf/WebhookController.java",
+      "line": 22
+    }
+  ]
+}
