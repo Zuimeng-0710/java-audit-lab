@@ -216,9 +216,13 @@ fail_on: high
 cache: true
 exclude_paths: [src/test/*, generated/*]
 extra_rules: [.java-audit/rules/team-rules.yaml]
+report_owner: security-team
+authorization_ref: AUTH-2026-001
+scope_note: 本次仅扫描后端服务目录
+retention_note: 项目结束后按授权约定清理源码和缓存
 ```
 
-命令行参数覆盖配置文件。放在 `.java-audit/rules/` 中的 YAML 或 JSON 规则会自动加载。
+命令行参数覆盖配置文件。放在 `.java-audit/rules/` 中的 YAML 或 JSON 规则会自动加载。报告档案字段仅用于记录使用者提供的信息，工具不会据此自动声明已经获得授权。
 
 ## 可选 AI 解释
 

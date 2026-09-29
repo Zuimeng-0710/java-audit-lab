@@ -213,9 +213,13 @@ fail_on: high
 cache: true
 exclude_paths: [src/test/*, generated/*]
 extra_rules: [.java-audit/rules/team-rules.yaml]
+report_owner: security-team
+authorization_ref: AUTH-2026-001
+scope_note: Scan only the backend service directory
+retention_note: Remove source and cache files according to the authorization agreement
 ```
 
-Command-line options override project configuration. YAML and JSON rules placed under `.java-audit/rules/` are loaded automatically.
+Command-line options override project configuration. YAML and JSON rules placed under `.java-audit/rules/` are loaded automatically. Report dossier fields record user-supplied context and do not make an authorization claim on the user's behalf.
 
 ## Optional AI explanations
 

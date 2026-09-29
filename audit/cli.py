@@ -305,7 +305,15 @@ def _scan(args: argparse.Namespace) -> int:
     findings.sort(key=lambda item: (-item.review_priority, SEVERITY_ORDER.get(item.severity, 99), item.location.path, item.location.line))
     playbook = evaluate_playbook(project, surface, results, findings, reviews, baseline, ["JSON", "SARIF", "HTML", "Markdown"], authz)
     output_dir = Path(args.output).resolve()
-    json_path, html_path, md_path = write_reports(output_dir, project, findings, results, baseline, reviews, surface.to_dict(), playbook, authz.to_dict(), incremental)
+    engagement = {
+        "report_owner": str(config.get("report_owner") or "未填写"),
+        "authorization_ref": str(config.get("authorization_ref") or "未填写；授权状态由使用者自行确认"),
+        "scope_note": str(config.get("scope_note") or f"当前命令指定的项目根目录：{project.root}"),
+        "retention_note": str(config.get("retention_note") or "请按授权约定保留或删除源代码、缓存和报告；公开报告前检查路径、密钥与业务信息。"),
+        "excluded_paths": exclude_paths,
+        "validity_note": "报告仅反映本次扫描时的代码、配置与依赖状态；任一项发生变更后应重新扫描。",
+    }
+    json_path, html_path, md_path = write_reports(output_dir, project, findings, results, baseline, reviews, surface.to_dict(), playbook, authz.to_dict(), incremental, engagement)
     progress = playbook["progress"]
     print(f"\n完成：{len(findings)} 条待复核发现；新增 {len(baseline['new'])}；已修复 {len(baseline['fixed'])}")
     print(f"审计阶段：已完成 {progress['completed']}/{progress['total']}，部分完成 {progress['partial']}")

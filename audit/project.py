@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import fnmatch
 import os
+import subprocess
 import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -9,6 +10,9 @@ from pathlib import Path
 
 IGNORED_DIRS = {".git", ".gradle", ".idea", ".mvn", ".java-audit-cache", "audit-report", "build", "dist", "node_modules", "out", "output", "target"}
 CONFIG_SUFFIXES = {".yml", ".yaml", ".properties", ".xml", ".json", ".env"}
+SOURCE_SUFFIXES = {".java", ".kt", ".kts", ".groovy", ".scala"}
+WEB_SUFFIXES = {".jsp", ".jspx", ".html", ".htm", ".js", ".ts", ".css", ".vue"}
+TEXT_SUFFIXES = SOURCE_SUFFIXES | WEB_SUFFIXES | CONFIG_SUFFIXES | {".sql", ".gradle"}
 
 # Glob patterns applied to repo-relative posix paths, e.g. "src/test/*".
 # Mutated at runtime by set_excluded_globs(); we keep it as a module-level list
@@ -84,6 +88,9 @@ class ProjectInfo:
     java_files: int
     manifests: list[str]
     frameworks: list[str]
+    inventory: dict[str, object]
+    revision: str
+    branch: str
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -121,6 +128,57 @@ def source_scope(path: str | Path) -> str:
     return "production"
 
 
+def collect_inventory(root: Path) -> dict[str, object]:
+    """Build a small, reproducible scope manifest without retaining file contents."""
+    by_extension: dict[str, int] = {}
+    total_files = source_files = config_files = web_files = estimated_lines = counted_files = 0
+    for path in root.rglob("*"):
+        if not path.is_file():
+            continue
+        rel_parts = path.relative_to(root).parts
+        if _is_excluded(rel_parts):
+            continue
+        total_files += 1
+        suffix = path.suffix.lower() or "[no extension]"
+        by_extension[suffix] = by_extension.get(suffix, 0) + 1
+        if suffix in SOURCE_SUFFIXES:
+            source_files += 1
+        if path.name == ".env" or suffix in CONFIG_SUFFIXES:
+            config_files += 1
+        if suffix in WEB_SUFFIXES:
+            web_files += 1
+        if suffix in TEXT_SUFFIXES:
+            try:
+                if path.stat().st_size <= 5 * 1024 * 1024:
+                    data = path.read_bytes()
+                    estimated_lines += data.count(b"\n") + (1 if data else 0)
+                    counted_files += 1
+            except OSError:
+                pass
+    return {
+        "total_files": total_files,
+        "source_files": source_files,
+        "config_files": config_files,
+        "web_files": web_files,
+        "estimated_lines": estimated_lines,
+        "line_counted_files": counted_files,
+        "by_extension": dict(sorted(by_extension.items(), key=lambda item: (-item[1], item[0]))[:12]),
+    }
+
+
+def _git_metadata(root: Path) -> tuple[str, str]:
+    def value(*args: str) -> str:
+        try:
+            completed = subprocess.run(
+                ["git", "-C", str(root), *args], capture_output=True, text=True,
+                encoding="utf-8", errors="replace", timeout=3, check=False,
+            )
+            return completed.stdout.strip() if completed.returncode == 0 else ""
+        except (OSError, subprocess.SubprocessError):
+            return ""
+    return value("rev-parse", "--short=12", "HEAD"), value("branch", "--show-current")
+
+
 def detect_project(target: str | Path) -> ProjectInfo:
     root = Path(target).expanduser().resolve()
     if not root.exists():
@@ -150,6 +208,7 @@ def detect_project(target: str | Path) -> ProjectInfo:
         "Struts": ("struts",), "Jersey": ("jersey",), "WebFlux": ("spring-webflux",),
     }
     frameworks = [name for name, markers in framework_markers.items() if any(marker in manifest_text for marker in markers)]
+    revision, branch = _git_metadata(root)
     return ProjectInfo(
         root=str(root),
         name=root.name,
@@ -157,4 +216,7 @@ def detect_project(target: str | Path) -> ProjectInfo:
         java_files=sum(1 for _ in iter_java_files(root)),
         manifests=manifests,
         frameworks=frameworks,
+        inventory=collect_inventory(root),
+        revision=revision,
+        branch=branch,
     )

@@ -14,7 +14,7 @@ from .project import ProjectInfo
 from .runners.base import RunnerResult
 
 
-def write_reports(output_dir: Path, project: ProjectInfo, findings: list[Finding], runners: list[RunnerResult], baseline: dict[str, object] | None = None, reviews: dict[str, dict[str, str]] | None = None, surface: dict[str, Any] | None = None, playbook: dict[str, Any] | None = None, authz: dict[str, Any] | None = None, incremental: dict[str, Any] | None = None) -> tuple[Path, Path, Path]:
+def write_reports(output_dir: Path, project: ProjectInfo, findings: list[Finding], runners: list[RunnerResult], baseline: dict[str, object] | None = None, reviews: dict[str, dict[str, str]] | None = None, surface: dict[str, Any] | None = None, playbook: dict[str, Any] | None = None, authz: dict[str, Any] | None = None, incremental: dict[str, Any] | None = None, engagement: dict[str, Any] | None = None) -> tuple[Path, Path, Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
     review_data = reviews or {}
     items = []
@@ -27,13 +27,19 @@ def write_reports(output_dir: Path, project: ProjectInfo, findings: list[Finding
             "review": review_data.get(finding.fingerprint, {}),
         })
     payload = {
-        "schema_version": "1.2", "tool": {"name": "Java Audit Lab", "version": __version__},
+        "schema_version": "1.3", "tool": {"name": "Java Audit Lab", "version": __version__},
         "generated_at": datetime.now(timezone.utc).isoformat(), "project": project.to_dict(),
         "summary": _summary(findings, review_data),
         "surface": surface or {"entries": [], "controls": [], "dynamic_calls": [], "entry_count": 0, "control_count": 0},
         "playbook": playbook or {},
         "authz": authz or {"endpoints": [], "rules": [], "coverage": {}},
         "incremental": incremental or {"enabled": False},
+        "engagement": engagement or {
+            "report_owner": "未填写", "authorization_ref": "未填写；授权状态由使用者自行确认",
+            "scope_note": f"当前项目根目录：{project.root}", "excluded_paths": [],
+            "retention_note": "请按授权约定保留或删除源代码、缓存和报告；公开报告前检查敏感信息。",
+            "validity_note": "报告仅反映本次扫描时的代码、配置与依赖状态；发生变更后应重新扫描。",
+        },
         "baseline": baseline or {"enabled": False, "new": [item.fingerprint for item in findings], "existing": [], "fixed": []},
         "scanners": [result.summary() for result in runners], "findings": items,
         "disclaimer": "扫描结果是待复核线索，不等于已确认漏洞。漏洞是否成立取决于五问证据是否补齐与人工结论。",
@@ -66,10 +72,11 @@ def _render_html(payload: dict[str, Any]) -> str:
     new_set = set(baseline.get("new", []))
     cards = "".join(_finding_card(f, f["fingerprint"] in new_set) for f in payload["findings"]) or '<div class="empty-state"><b>没有发现匹配项</b><span>请确认项目包含 Java 文件，并查看扫描器运行状态。</span></div>'
     scanner_cards = "".join(_scanner_card(scanner) for scanner in payload["scanners"])
+    engagement_section = _engagement_section(payload)
     authz_section = _authz_section(payload)
     incremental_section = _incremental_section(payload)
     incremental_nav = '<a class="side-link" href="#incremental"><i></i>增量审计</a>' if incremental_section else ""
-    spy_ids = "['overview','scanners','playbook','authz','incremental','findings']" if incremental_section else "['overview','scanners','playbook','authz','findings']"
+    spy_ids = "['overview','engagement','scanners','playbook','authz','incremental','findings']" if incremental_section else "['overview','engagement','scanners','playbook','authz','findings']"
     playbook_data = payload.get("playbook") or {}
     playbook_progress = playbook_data.get("progress", {"completed": 0, "partial": 0, "pending": 0, "total": 0})
     playbook_total = int(playbook_progress.get("total", 0)) or 1
@@ -202,26 +209,29 @@ html[data-theme="dark"]{{--bg:#0b101d;--surface:#141b2c;--surface-soft:#101728;-
 .gate{{display:grid;grid-template-columns:1fr 1fr;gap:12px}}.gate-panel{{padding:13px 14px;border-radius:11px;border:1px solid var(--line)}}.gate-panel b{{display:block;font-size:12px;margin-bottom:7px}}.gate-panel ul{{margin:0;padding-left:16px;font-size:12px;color:var(--muted);display:grid;gap:4px}}.gate-panel.positive{{background:var(--critical-soft);border-color:color-mix(in srgb,var(--critical) 30%,var(--line))}}.gate-panel.positive b{{color:var(--critical)}}.gate-panel.negative{{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 30%,var(--line))}}.gate-panel.negative b{{color:var(--ok)}}
 .guide{{margin:0 20px 16px 24px;padding:15px 16px;border:1px solid color-mix(in srgb,var(--brand) 24%,var(--line));border-radius:11px;background:linear-gradient(120deg,var(--brand-soft),var(--surface))}}.guide-head{{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}}.guide-head b{{font-size:13px}}.guide-head span{{font-size:10.5px;color:var(--muted)}}.guide-row{{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}}.guide-row p{{margin:0;font-size:12px}}.answers{{display:flex;gap:4px}}.answer{{height:29px;padding:0 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--muted);cursor:pointer;font-size:11px;font-weight:600;transition:.12s}}.answer:hover{{border-color:var(--brand);color:var(--brand-ink)}}.answer.active{{background:var(--brand);border-color:var(--brand);color:#fff}}
 .review{{margin:0 20px 18px 24px;padding:15px 16px;border:1px solid var(--line);border-radius:11px;background:var(--surface-soft);display:grid;gap:13px}}.review-head{{display:flex;align-items:start;justify-content:space-between;gap:16px}}.review-head b{{display:block;font-size:13px}}.review-head small{{display:block;margin-top:2px;color:var(--muted);font-size:11px}}.review-state{{flex:none;padding:3px 9px;border:1px solid var(--line);border-radius:20px;background:var(--surface);color:var(--muted);font-size:10.5px;font-weight:700}}.review-grid{{display:grid;grid-template-columns:minmax(280px,360px) minmax(320px,1fr);gap:16px;align-items:stretch}}.review-decision{{display:grid;align-content:start;gap:11px;padding-right:16px;border-right:1px solid var(--line)}}.review-label,.review-notes>span{{display:block;margin-bottom:6px;color:var(--muted);font-size:11px;font-weight:700}}.verdicts{{display:flex;gap:7px;flex-wrap:wrap}}[data-verdict]{{height:31px;padding:0 13px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;font-size:12px;font-weight:700;transition:.12s}}[data-verdict].active[data-verdict="confirmed"]{{background:var(--critical);border-color:var(--critical);color:#fff}}[data-verdict].active[data-verdict="false-positive"]{{background:var(--ok);border-color:var(--ok);color:#fff}}[data-verdict].active[data-verdict="uncertain"]{{background:var(--medium);border-color:var(--medium);color:#fff}}.review-notes{{display:block}}.review textarea{{width:100%;min-height:88px;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font-size:12px;resize:vertical}}.confidence{{display:grid;grid-template-columns:auto auto minmax(120px,1fr);align-items:center;gap:10px;font-size:11.5px;color:var(--muted)}}.confidence input{{width:100%;accent-color:var(--brand)}}[data-confidence-value]{{font-weight:800;color:var(--brand-ink);font-variant-numeric:tabular-nums}}
+.dossier-grid{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}}.dossier-card{{padding:14px 15px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}}.dossier-card>span{{display:block;color:var(--muted);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.35px}}.dossier-card>b{{display:block;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}}.dossier-card>small{{display:block;margin-top:4px;color:var(--faint);font-size:10.5px;line-height:1.5}}.scope-sheet{{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}}.scope-block{{padding:16px 18px;min-width:0}}.scope-block+ .scope-block{{border-left:1px solid var(--line)}}.scope-block h3{{margin:0 0 9px;font-size:13px}}.scope-list{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}}.scope-item{{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:7px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11.5px}}.scope-item b{{color:var(--ink);font-variant-numeric:tabular-nums}}.scope-copy{{display:grid;gap:9px}}.scope-copy div{{min-width:0}}.scope-copy b{{display:block;color:var(--muted);font-size:10.5px}}.scope-copy span{{display:block;margin-top:2px;overflow-wrap:anywhere;color:var(--ink);font-size:11.5px}}.extension-list{{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}}.extension-list span{{padding:2px 8px;border:1px solid var(--line);border-radius:20px;background:var(--surface-soft);color:var(--muted);font-size:10.5px}}
 .authz-tools{{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}}.authz-summary{{display:flex;flex-wrap:wrap;gap:6px}}.authz-chip{{font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:3px 10px}}.authz-chip b{{color:var(--ink)}}.authz-filters{{display:flex;gap:8px;align-items:center}}.authz-filters input{{width:min(260px,28vw)}}.authz-count{{color:var(--muted);font-size:11px;white-space:nowrap}}.authz-shell{{overflow:hidden}}.authz-scroll{{max-height:min(68vh,760px);overflow:auto}}.authz-table{{width:100%;min-width:980px;border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:12px}}.authz-table th{{position:sticky;top:0;z-index:2;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--surface-soft);color:var(--muted);font-size:10.5px;letter-spacing:.25px;text-align:left;text-transform:uppercase}}.authz-table td{{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;overflow:hidden}}.authz-table tbody tr:nth-child(even){{background:color-mix(in srgb,var(--surface-soft) 62%,transparent)}}.authz-table tbody tr:hover{{background:var(--brand-soft)}}.authz-route{{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--brand-ink);font:600 11.5px/1.5 ui-monospace,Consolas,monospace}}.authz-meta{{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;color:var(--faint);font-size:10.5px}}.method-badge,.status-badge{{display:inline-flex;align-items:center;min-height:24px;padding:2px 8px;border-radius:7px;background:var(--surface-soft);border:1px solid var(--line);font-size:10.5px;font-weight:800;white-space:nowrap}}.status-badge{{color:var(--badge-color,var(--muted));border-color:color-mix(in srgb,var(--badge-color,var(--line)) 32%,var(--line));background:color-mix(in srgb,var(--badge-color,var(--surface)) 8%,var(--surface))}}.authz-cell-main{{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}.authz-cell-sub{{display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--faint);font-size:10.5px}}
 .empty-state{{padding:60px 20px;text-align:center;color:var(--muted);display:grid;gap:6px}}footer{{text-align:center;color:var(--faint);font-size:11.5px;padding:26px 0 10px;border-top:1px solid var(--line)}}
 button.location{{display:block;max-width:min(54vw,840px);overflow:hidden;text-overflow:ellipsis;border:0;background:transparent;cursor:pointer;font-size:11.5px;color:var(--muted);font-family:ui-monospace,Consolas,monospace;white-space:nowrap;text-align:right}}button.location:hover{{color:var(--brand)}}
 .mobile-top{{display:none}}
 @media(max-width:1080px){{.app{{grid-template-columns:minmax(0,1fr)}}.sidebar{{display:none}}.mobile-top{{display:flex;position:sticky;top:0;z-index:40;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--line)}}}}
+@media(max-width:1100px){{.dossier-grid{{grid-template-columns:repeat(2,minmax(0,1fr))}}.scope-sheet{{grid-template-columns:1fr}}.scope-block+ .scope-block{{border-left:0;border-top:1px solid var(--line)}}}}
 @media(max-width:900px){{.review-grid{{grid-template-columns:1fr}}.review-decision{{padding-right:0;padding-bottom:13px;border-right:0;border-bottom:1px solid var(--line)}}}}
 @media(max-width:760px){{.mobile-top{{padding:10px 14px}}.topbar{{position:static;flex-direction:column;align-items:stretch;padding:12px 14px}}.top-actions{{justify-content:flex-start;width:100%;overflow-x:auto;padding-bottom:2px}}.top-actions .btn{{flex:none}}.theme-toggle{{display:none}}.page{{padding:18px 14px 44px;gap:24px}}.overview{{grid-template-columns:repeat(2,minmax(0,1fr))}}.dashboard-grid,.scanner-grid,.stepper{{grid-template-columns:minmax(0,1fr)}}.section-head{{flex-direction:column;align-items:start}}.toolbar{{position:static;align-items:stretch}}.toolbar .field,input.field{{width:100%;min-width:0}}.actions{{width:100%;margin-left:0}}.actions .btn{{width:100%;justify-content:center}}.group-header{{top:0}}.finding-head{{flex-direction:column}}button.location{{width:100%;max-width:100%;text-align:left}}.guide-row{{grid-template-columns:1fr}}.answers{{flex-wrap:wrap}}.factor{{grid-template-columns:90px minmax(0,1fr) 36px}}.gate{{grid-template-columns:1fr}}.guide{{margin:0 12px 16px 16px}}.review{{margin:0 12px 16px 16px}}.review-head{{flex-direction:column;gap:7px}}.confidence{{grid-template-columns:auto auto minmax(80px,1fr)}}.authz-tools,.authz-filters{{align-items:stretch;flex-direction:column}}.authz-filters{{width:100%}}.authz-filters input,.authz-filters select{{width:100%}}}}
+@media(max-width:520px){{.dossier-grid,.scope-list{{grid-template-columns:1fr}}}}
 @media(max-width:420px){{.overview{{grid-template-columns:1fr}}.finding-main{{padding:16px 14px 12px 18px}}.finding details{{padding:0 14px 0 18px}}.progress-track{{width:100px}}}}
 @media print{{.sidebar,.mobile-top,.toolbar,.actions,.review,.guide,.icon-btn{{display:none!important}}.app{{grid-template-columns:1fr}}.page{{padding:0}}.finding{{break-inside:avoid;box-shadow:none}}details{{display:block}}details>.detail-body{{display:block}}body{{background:#fff}}}}
 </style></head><body>
 <div class="mobile-top"><div class="brand"><span class="logo">JA</span><span>Java Audit Lab <span class="version">{__version__}</span></span></div><button class="icon-btn" id="theme-m" title="切换主题">◐</button></div>
 <div class="app"><aside class="sidebar"><div class="brand"><span class="logo">JA</span><span>Java Audit Lab <span class="version">{__version__}</span></span></div>
 <div class="project-brief"><b>{html.escape(project['name'])}</b><span>{html.escape(project['build_system'])} · {project['java_files']} 个 Java 文件</span><span>{html.escape(framework_text)}</span><span>{html.escape(generated)}</span></div>
-<nav class="side-nav"><a class="side-link" href="#overview"><i></i>概览</a><a class="side-link" href="#scanners"><i></i>扫描器状态</a><a class="side-link" href="#playbook"><i></i>审计阶段</a><a class="side-link" href="#authz"><i></i>权限矩阵</a>{incremental_nav}<a class="side-link" href="#findings"><i></i>复核工作区</a></nav>
+<nav class="side-nav"><a class="side-link" href="#overview"><i></i>概览</a><a class="side-link" href="#engagement"><i></i>审计档案</a><a class="side-link" href="#scanners"><i></i>扫描器状态</a><a class="side-link" href="#playbook"><i></i>审计阶段</a><a class="side-link" href="#authz"><i></i>权限矩阵</a>{incremental_nav}<a class="side-link" href="#findings"><i></i>复核工作区</a></nav>
 <div class="side-stage"><span>审计阶段 <b>{playbook_progress.get('completed', 0)}</b> / {playbook_total}</span><i class="progress-track"><i class="progress-bar" style="width:{playbook_pct}%"></i></i></div>
 <div class="side-ring"><svg viewBox="0 0 72 72" width="64" height="64"><circle class="ring-bg" cx="36" cy="36" r="30"/><circle class="ring-fg" id="ring-fg" cx="36" cy="36" r="30"/><text class="ring-text" id="ring-text" x="36" y="41">0%</text></svg><div class="side-ring-meta"><b id="ring-count">{reviewed_start} / {total}</b><span>人工复核进度</span></div></div>
 </aside>
 <main class="main" data-report="{report_id}"><div class="topbar"><div><h1>{html.escape(project['name'])}</h1><div class="meta-chips"><span>{html.escape(project['build_system'])}</span><span>{project['java_files']} 文件</span><span>{html.escape(framework_text)}</span><span>最高关注指数 {risk_score}</span></div></div><div class="top-actions"><button class="btn theme-toggle" id="theme" title="切换明暗主题"><span class="theme-icon">☾</span><span data-theme-label>深色模式</span></button><button class="btn btn-primary" id="export">↓ 导出复核</button><a class="btn" href="report.json" download>JSON</a><a class="btn" href="report.sarif" download>SARIF</a><a class="btn" href="report.md" download>MD</a></div></div>
 <div class="page">
-<section class="overview" id="overview"><div class="metric" style="--dot:var(--brand)"><span class="metric-label"><i class="dot"></i>全部线索</span><strong>{total}</strong><small>等待人工判断</small></div><div class="metric" style="--dot:var(--critical)"><span class="metric-label"><i class="dot"></i>严重</span><strong>{counts['critical']}</strong><small>优先复核</small></div><div class="metric" style="--dot:var(--high)"><span class="metric-label"><i class="dot"></i>高危</span><strong>{counts['high']}</strong><small>需要关注</small></div><div class="metric" style="--dot:var(--medium)"><span class="metric-label"><i class="dot"></i>中危</span><strong>{counts['medium']}</strong><small>结合上下文</small></div><div class="metric" style="--dot:var(--cyan)"><span class="metric-label"><i class="dot"></i>基线新增</span><strong>{len(baseline.get('new', []))}</strong><small>本轮变化</small></div><div class="metric" style="--dot:var(--ok)"><span class="metric-label"><i class="dot"></i>已修复</span><strong>{len(baseline.get('fixed', []))}</strong><small>相对基线</small></div></section>
+<section class="overview" id="overview"><div class="metric" style="--dot:var(--brand)"><span class="metric-label"><i class="dot"></i>全部线索</span><strong>{total}</strong><small>等待人工判断</small></div><div class="metric" style="--dot:var(--critical)"><span class="metric-label"><i class="dot"></i>严重</span><strong>{counts['critical']}</strong><small>优先复核</small></div><div class="metric" style="--dot:var(--high)"><span class="metric-label"><i class="dot"></i>高危</span><strong>{counts['high']}</strong><small>需要关注</small></div><div class="metric" style="--dot:var(--medium)"><span class="metric-label"><i class="dot"></i>中危</span><strong>{counts['medium']}</strong><small>结合上下文</small></div><div class="metric" style="--dot:var(--cyan)"><span class="metric-label"><i class="dot"></i>基线新增</span><strong>{len(baseline.get('new', []))}</strong><small>本轮变化</small></div><div class="metric" style="--dot:var(--ok)"><span class="metric-label"><i class="dot"></i>已修复</span><strong>{len(baseline.get('fixed', []))}</strong><small>相对基线</small></div></section>{engagement_section}
 
 
 <section class="section" id="dashboard"><div class="section-head"><div><h2>数据洞察</h2><p>四类视图协同：严重度分布、CWE 类型聚集、扫描器贡献、证据结论等级</p></div></div><div class="dashboard-grid"><div class="chart-card"><div class="chart-head"><b>严重度分布</b><small>按数量归一</small></div><div class="chart-body">{sev_bars}</div></div><div class="chart-card"><div class="chart-head"><b>CWE 类型聚集</b><small>前 8 类</small></div><div class="chart-body">{cwe_bars}</div></div><div class="chart-card"><div class="chart-head"><b>扫描器贡献</b><small>各扫描器命中数</small></div><div class="chart-body">{scanner_bars}</div></div><div class="chart-card"><div class="chart-head"><b>证据结论分布</b><small>路径证据等级</small></div><div class="chart-body">{conclusion_bars}</div></div></div></section>
@@ -243,7 +253,7 @@ cards.forEach(card=>{{const fp=card.dataset.fp;state[fp]=state[fp]||{{}};state[f
 const authzSearch=document.querySelector('#authz-search'),authzFilter=document.querySelector('#authz-filter'),authzRows=[...document.querySelectorAll('[data-authz-status]')];
 function applyAuthzFilters(){{if(!authzSearch||!authzFilter)return;const q=authzSearch.value.trim().toLowerCase(),filter=authzFilter.value;let visible=0;authzRows.forEach(row=>{{const statusMatch=filter==='all'||row.dataset.authzStatus===filter||(filter==='anonymous'&&row.dataset.authzRequirement==='anonymous'),show=statusMatch&&(!q||row.dataset.authzSearch.includes(q));row.hidden=!show;if(show)visible++}});const count=document.querySelector('#authz-visible');if(count)count.textContent=visible}}
 if(authzSearch&&authzFilter){{authzSearch.addEventListener('input',applyAuthzFilters);authzFilter.addEventListener('input',applyAuthzFilters)}}
-document.querySelector('#export').onclick=()=>{{const blob=new Blob([JSON.stringify({{schema_version:'1.2',project:{project_json},exported_at:new Date().toISOString(),reviews:state}},null,2)],{{type:'application/json'}}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='review.json';a.click();URL.revokeObjectURL(a.href)}};
+document.querySelector('#export').onclick=()=>{{const blob=new Blob([JSON.stringify({{schema_version:'1.3',project:{project_json},exported_at:new Date().toISOString(),reviews:state}},null,2)],{{type:'application/json'}}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='review.json';a.click();URL.revokeObjectURL(a.href)}};
 document.querySelector('#clear').onclick=()=>{{if(confirm('确定清空当前项目保存在浏览器中的复核记录？')){{localStorage.removeItem(storageKey);location.reload()}}}};
 const themeKey='java-audit-theme',root=document.documentElement;root.dataset.theme=localStorage.getItem(themeKey)||'light';
 const syncThemeUi=()=>{{const dark=root.dataset.theme==='dark';document.querySelectorAll('[data-theme-label]').forEach(el=>el.textContent=dark?'浅色模式':'深色模式');document.querySelectorAll('.theme-icon').forEach(el=>el.textContent=dark?'☀':'☾');const mobile=document.querySelector('#theme-m');if(mobile)mobile.textContent=dark?'☀':'◐'}};
@@ -481,6 +491,51 @@ def _incremental_section(payload: dict[str, Any]) -> str:
     )
 
 
+def _engagement_section(payload: dict[str, Any]) -> str:
+    """Professional scope record derived from local evidence and optional project config."""
+    project = payload.get("project") or {}
+    engagement = payload.get("engagement") or {}
+    inventory = project.get("inventory") or {}
+    scanners = payload.get("scanners") or []
+    completed = sum(1 for scanner in scanners if scanner.get("success"))
+    unavailable = sum(1 for scanner in scanners if not scanner.get("available"))
+    revision = str(project.get("revision") or "未检测到 Git 提交")
+    branch = str(project.get("branch") or "未检测到分支")
+    snapshot = f"{branch} · {revision}" if project.get("revision") else revision
+    generated = str(payload.get("generated_at", "")).replace("T", " ").replace("+00:00", " UTC")[:23]
+    by_extension = inventory.get("by_extension") or {}
+    extensions = "".join(
+        f'<span>{html.escape(str(suffix))} × {int(count)}</span>'
+        for suffix, count in list(by_extension.items())[:10]
+    ) or '<span>未采集扩展名统计</span>'
+    excluded = engagement.get("excluded_paths") or []
+    excluded_text = "、".join(str(item) for item in excluded) if excluded else "未配置额外排除路径"
+    return (
+        '<section class="section" id="engagement"><div class="section-head"><div><h2>审计档案与范围</h2>'
+        '<p>记录本次扫描对象、代码快照、覆盖范围与报告适用边界，便于复核和后续重扫</p></div></div>'
+        '<div class="dossier-grid">'
+        f'<article class="dossier-card"><span>报告负责人</span><b title="{html.escape(str(engagement.get("report_owner", "未填写")))}">{html.escape(str(engagement.get("report_owner", "未填写")))}</b><small>可在项目配置中填写 report_owner</small></article>'
+        f'<article class="dossier-card"><span>代码快照</span><b title="{html.escape(snapshot)}">{html.escape(snapshot)}</b><small>用于区分代码迭代前后的审计结果</small></article>'
+        f'<article class="dossier-card"><span>扫描器覆盖</span><b>{completed} / {len(scanners)} 已完成</b><small>{unavailable} 个扫描器未安装或不可用</small></article>'
+        f'<article class="dossier-card"><span>生成时间</span><b>{html.escape(generated)}</b><small>工具版本 Java Audit Lab {html.escape(str(payload.get("tool", {}).get("version", "")))}</small></article>'
+        '</div><div class="scope-sheet"><div class="scope-block"><h3>扫描覆盖清单</h3><div class="scope-list">'
+        f'<div class="scope-item"><span>项目文件</span><b>{int(inventory.get("total_files", 0))}</b></div>'
+        f'<div class="scope-item"><span>源代码文件</span><b>{int(inventory.get("source_files", project.get("java_files", 0)))}</b></div>'
+        f'<div class="scope-item"><span>配置文件</span><b>{int(inventory.get("config_files", 0))}</b></div>'
+        f'<div class="scope-item"><span>Web 前端文件</span><b>{int(inventory.get("web_files", 0))}</b></div>'
+        f'<div class="scope-item"><span>估算文本行数</span><b>{int(inventory.get("estimated_lines", 0)):,}</b></div>'
+        f'<div class="scope-item"><span>入口候选</span><b>{int((payload.get("surface") or {}).get("entry_count", 0))}</b></div>'
+        f'</div><div class="extension-list">{extensions}</div></div>'
+        '<div class="scope-block"><h3>范围与使用边界</h3><div class="scope-copy">'
+        f'<div><b>扫描范围</b><span>{html.escape(str(engagement.get("scope_note", project.get("root", ""))))}</span></div>'
+        f'<div><b>授权依据</b><span>{html.escape(str(engagement.get("authorization_ref", "未填写；授权状态由使用者自行确认")))}</span></div>'
+        f'<div><b>排除路径</b><span>{html.escape(excluded_text)}</span></div>'
+        f'<div><b>报告有效性</b><span>{html.escape(str(engagement.get("validity_note", "代码、配置或依赖变化后应重新扫描。")))}</span></div>'
+        f'<div><b>数据保留</b><span>{html.escape(str(engagement.get("retention_note", "公开报告前检查敏感信息。")))}</span></div>'
+        '</div></div></div></section>'
+    )
+
+
 def _authz_section(payload: dict[str, Any]) -> str:
     """阶段 B：端点 × 身份要求 × 角色 × 危险操作 × 证据状态 矩阵。"""
     authz = payload.get("authz") or {}
@@ -704,6 +759,7 @@ def _finding_card(finding: dict[str, Any], is_new: bool) -> str:
 def _render_markdown(payload: dict[str, Any]) -> str:
     """Stage 5 audit report: evidence-first Markdown. No attack payloads, no authorization claims."""
     project, summary, surface = payload["project"], payload["summary"], payload.get("surface") or {}
+    engagement = payload.get("engagement") or {}
     playbook_data = payload.get("playbook") or {}
     baseline = payload["baseline"]
     findings = payload["findings"]
@@ -713,7 +769,8 @@ def _render_markdown(payload: dict[str, Any]) -> str:
     lines.append(f"- 工具版本：Java Audit Lab {payload['tool']['version']}（Evidence Driven Audit Playbook）")
     lines.append(f"- 生成时间：{payload['generated_at']}")
     lines.append(f"- 扫描范围：{project['root']}")
-    lines.append("- 授权状态：由使用者自行确认，本报告不代为声明书面授权")
+    lines.append(f"- 报告负责人：{engagement.get('report_owner', '未填写')}")
+    lines.append(f"- 授权依据：{engagement.get('authorization_ref', '未填写；授权状态由使用者自行确认')}")
     lines.append(f"- 结论性质：{payload['disclaimer']}")
     lines.append("")
     lines.append("## 一、执行摘要")
@@ -769,7 +826,33 @@ def _render_markdown(payload: dict[str, Any]) -> str:
         missing = "；".join(str(item) for item in stage.get("missing", [])[:4])
         lines.append(f"| {stage.get('name')} | {status} | {evidence or '—'} | {missing or '—'} |")
     lines.append("")
-    lines.append("## 二、端点权限矩阵")
+    section_labels = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
+    section_index = 1
+
+    def add_section(title: str) -> None:
+        nonlocal section_index
+        label = section_labels[section_index] if section_index < len(section_labels) else str(section_index + 1)
+        lines.append(f"## {label}、{title}")
+        section_index += 1
+
+    add_section("审计档案与范围")
+    lines.append("")
+    inventory = project.get("inventory") or {}
+    snapshot = f"{project.get('branch') or '未检测到分支'} · {project.get('revision') or '未检测到 Git 提交'}"
+    lines.append("| 字段 | 记录 |")
+    lines.append("|---|---|")
+    lines.append(f"| 代码快照 | {snapshot} |")
+    lines.append(f"| 扫描范围 | {engagement.get('scope_note', project.get('root', ''))} |")
+    lines.append(f"| 排除路径 | {'、'.join(str(item) for item in engagement.get('excluded_paths', [])) or '未配置额外排除路径'} |")
+    lines.append(f"| 项目文件 | {inventory.get('total_files', 0)} 个 |")
+    lines.append(f"| 源代码文件 | {inventory.get('source_files', project.get('java_files', 0))} 个 |")
+    lines.append(f"| 配置文件 | {inventory.get('config_files', 0)} 个 |")
+    lines.append(f"| Web 前端文件 | {inventory.get('web_files', 0)} 个 |")
+    lines.append(f"| 估算文本行数 | {inventory.get('estimated_lines', 0)} 行（统计 {inventory.get('line_counted_files', 0)} 个文本文件） |")
+    lines.append(f"| 报告有效性 | {engagement.get('validity_note', '代码、配置或依赖变化后应重新扫描。')} |")
+    lines.append(f"| 数据保留 | {engagement.get('retention_note', '公开报告前检查敏感信息。')} |")
+    lines.append("")
+    add_section("端点权限矩阵")
     lines.append("")
     authz = payload.get("authz") or {}
     endpoints = authz.get("endpoints") or []
@@ -808,7 +891,7 @@ def _render_markdown(payload: dict[str, Any]) -> str:
     lines.append("")
     incremental = payload.get("incremental") or {}
     if incremental.get("enabled"):
-        lines.append("## 三、Git 增量审计")
+        add_section("Git 增量审计")
         lines.append("")
         inc_stats = incremental.get("stats") or {}
         inc_mode = {"working": "工作区未提交变更", "ref": "与指定分支比较", "commit": "单次提交"}.get(
@@ -864,7 +947,7 @@ def _render_markdown(payload: dict[str, Any]) -> str:
         for note in incremental.get("notes") or []:
             lines.append(f"- 说明：{note}")
         lines.append("")
-    lines.append("## 四、发现详情（按复核优先级降序）")
+    add_section("发现详情（按复核优先级降序）")
     lines.append("")
     path_labels = {"proven": "已证明路径", "inferred": "推测路径", "missing": "缺失路径", "unresolved": "无法解析（动态调用）"}
     for number, finding in enumerate(findings, start=1):
@@ -951,7 +1034,7 @@ def _render_markdown(payload: dict[str, Any]) -> str:
             if generalization.get("same_cwe_other_rule_count"):
                 lines.append(f"  - 另有 {generalization['same_cwe_other_rule_count']} 条同 CWE 不同规则的线索，见报告列表")
         lines.append("")
-    lines.append("## 五、全局加固建议")
+    add_section("全局加固建议")
     lines.append("")
     cwes = sorted({str(finding["cwe"]) for finding in findings if str(finding["cwe"]).startswith("CWE-")})
     if "CWE-89" in cwes:
@@ -965,7 +1048,7 @@ def _render_markdown(payload: dict[str, Any]) -> str:
     if not cwes:
         lines.append("- 本轮未发现可归纳的系统性问题；保持扫描器与基线复查节奏即可。")
     lines.append("")
-    lines.append("## 六、待人工确认项")
+    add_section("待人工确认项")
     lines.append("")
     pending = [f for f in findings if not (f.get("review") or {}).get("verdict")]
     if not pending:
