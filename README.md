@@ -80,21 +80,51 @@ Start-Process audit-report\report.html
 
 ## 🧭 审计工作流
 
-```text
-项目画像 → 入口与信任边界 → Source / Sink 建模 → 数据流扫描
-        → 成立条件验证 → 同类模式泛化 → 反证与绕过检查
-        → 人工结论 → 修复复测与报告
+```mermaid
+flowchart TB
+    subgraph DISCOVERY["① 发现与建模"]
+        direction LR
+        A["项目画像<br/>框架 · 依赖 · 攻击面"] --> B["入口与信任边界<br/>路由 · 身份 · 数据归属"]
+        B --> C["Source / Sink 建模<br/>输入源 · 危险操作"]
+        C --> D["数据流扫描<br/>传播 · 净化 · 不确定路径"]
+    end
+
+    subgraph VALIDATION["② 验证与泛化"]
+        direction LR
+        E["成立条件验证<br/>触发条件 · 可控性"] --> F["同类模式泛化<br/>相似调用 · 关联文件"]
+        F --> G["反证与绕过检查<br/>白名单 · 权限 · 安全控制"]
+    end
+
+    subgraph REVIEW["③ 结论与复测"]
+        direction LR
+        H["人工结论<br/>判定 · 依据 · 信心"] --> I["修复复测与报告<br/>基线 · 回归 · 归档"]
+    end
+
+    D --> E
+    G --> H
+
+    classDef discovery fill:#eff6ff,stroke:#3b82f6,color:#172554,stroke-width:1.5px;
+    classDef validation fill:#fff7ed,stroke:#f97316,color:#7c2d12,stroke-width:1.5px;
+    classDef review fill:#ecfdf5,stroke:#10b981,color:#064e3b,stroke-width:1.5px;
+    class A,B,C,D discovery;
+    class E,F,G validation;
+    class H,I review;
 ```
 
-每个阶段展示完成状态、已有证据和仍缺少的证据。阶段只由扫描结果或人工回答推进，不接受 AI 的自我声明。
+> [!NOTE]
+> 每个阶段都记录完成状态、已有证据和缺失证据。阶段只由扫描结果或人工回答推进，AI 解释不能单独改变审计状态。
 
 ### 漏洞成立五问
 
-1. 外部入口和 HTTP 路径是什么？
-2. 调用需要什么身份、角色或数据归属？
-3. 输入如何到达危险操作？
-4. 已经确认了哪些净化、白名单或安全控制？
-5. 哪些条件仍然缺少证据？
+| 检查点 | 核心问题 | 期望证据 |
+|---|---|---|
+| **01 · 入口** | 外部入口和 HTTP 路径是什么？ | 路由、Controller、消息消费者或任务入口 |
+| **02 · 权限** | 调用需要什么身份、角色或数据归属？ | Security 配置、权限注解、拦截器或所有权校验 |
+| **03 · 传播** | 输入如何到达危险操作？ | Source、赋值与调用传播、最终 Sink |
+| **04 · 反证** | 已确认哪些净化、白名单或安全控制？ | 参数化查询、规范化、编码、白名单或边界检查 |
+| **05 · 缺口** | 哪些成立条件仍然缺少证据？ | 未解析调用、动态配置、运行时条件或待人工确认项 |
+
+只有五项都有可定位的代码或配置依据时，工具才建议形成漏洞结论；否则保留为待复核线索并明确标记证据缺口。
 
 <a id="capabilities"></a>
 
