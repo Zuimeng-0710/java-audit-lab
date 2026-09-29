@@ -2,20 +2,23 @@
 
 ![Java Audit Lab](docs/assets/readme-hero.svg)
 
-# Java Audit Lab
-
-**Evidence-driven Java security review workbench**
-
-把扫描命中整理成可复核的证据链，帮助 Java 学习者、开发者与安全审计人员理解“为什么可疑、还缺什么、如何验证”。
+[简体中文](#java-audit-lab) · [English](#english-summary)
 
 [![Release](https://img.shields.io/github/v/release/Zuimeng-0710/java-audit-lab?style=flat-square&color=6366f1)](https://github.com/Zuimeng-0710/java-audit-lab/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/Zuimeng-0710/java-audit-lab/ci.yml?branch=main&style=flat-square&label=tests)](https://github.com/Zuimeng-0710/java-audit-lab/actions)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-0ea5e9?style=flat-square)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-10b981?style=flat-square)](LICENSE)
 
-[快速开始](#quick-start) · [核心能力](#capabilities) · [证据模型](#evidence-model) · [扫描器](#scanners) · [项目配置](#project-config) · [参与开发](#development)
+[![Rules](https://img.shields.io/badge/Java_rules-12-f97316?style=flat-square)](#capabilities)
+[![Reports](https://img.shields.io/badge/reports-HTML%20%7C%20JSON%20%7C%20SARIF%20%7C%20Markdown-2563eb?style=flat-square)](#quick-start)
+
+[快速开始](#quick-start) · [核心能力](#capabilities) · [证据模型](#evidence-model) · [扫描器](#scanners) · [参与开发](#development)
 
 </div>
+
+# Java Audit Lab
+
+Java Audit Lab 是面向 Java 学习者、开发者和安全审计人员的开源代码审计工作台。它把扫描命中整理成可复核的证据链，帮助你理解“为什么可疑、还缺什么证据、如何人工验证”。
 
 > [!IMPORTANT]
 > 扫描结果是待人工复核的安全线索，不等于已确认漏洞。请只分析自己拥有或已获得明确授权的项目与环境。
@@ -289,6 +292,14 @@ java-audit-lab/
 - 内置基准和 train 语料用于回归，不应当作为真实世界准确率声明。
 
 完整变化见 [CHANGELOG.md](CHANGELOG.md)。
+
+<a id="english-summary"></a>
+
+## English summary
+
+Java Audit Lab is an open-source, evidence-driven Java security review workbench for learners, developers, and security auditors. It turns scanner findings into reviewable evidence covering entry points, sources, propagation, sinks, sanitizers, authorization, uncertainty, and remediation verification.
+
+Scan results are review candidates rather than confirmed vulnerabilities. Review only projects and environments you own or are explicitly authorized to assess.
 
 ## License
 
