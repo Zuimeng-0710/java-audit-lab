@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from typing import Any
+
 from .findings import Finding
 
 
@@ -21,7 +23,7 @@ def compare_with_baseline(findings: list[Finding], baseline_path: Path | None) -
     }
 
 
-def load_reviews(review_path: Path | None) -> dict[str, dict[str, str]]:
+def load_reviews(review_path: Path | None) -> dict[str, dict[str, Any]]:
     if review_path is None:
         return {}
     payload = json.loads(review_path.read_text(encoding="utf-8-sig"))

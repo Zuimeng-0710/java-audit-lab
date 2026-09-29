@@ -64,6 +64,11 @@ class CoreTests(unittest.TestCase):
             self.assertIn("审计阶段 · Evidence Driven Playbook", page)
             self.assertIn("漏洞成立五问", page)
             self.assertIn("人工复核记录", page)
+            self.assertIn("验证台账", page)
+            self.assertIn("验证任务卡", page)
+            self.assertIn("data-task-status", page)
+            self.assertIn("误报归因", page)
+            self.assertIn("本工具不会自动连接目标", page)
             self.assertIn("data-review-state", page)
             self.assertIn("深色模式", page)
             self.assertIn("审计档案与范围", page)
@@ -74,9 +79,15 @@ class CoreTests(unittest.TestCase):
             self.assertNotIn("&amp;#x20;", page)
             markdown = md_path.read_text(encoding="utf-8")
             report_json = json.loads(json_path.read_text(encoding="utf-8"))
-            self.assertEqual(report_json["schema_version"], "1.3")
+            self.assertEqual(report_json["schema_version"], "1.4")
             self.assertIn("engagement", report_json)
+            self.assertIn("verification_summary", report_json)
+            task = report_json["findings"][0]["verification_task"]
+            self.assertTrue(task["task_id"].startswith("JAL-V-"))
+            self.assertEqual(task["status"], "not-started")
+            self.assertNotIn("payload", task)
             self.assertIn("待人工确认项", markdown)
+            self.assertIn("验证台账", markdown)
             self.assertIn("授权依据：未填写；授权状态由使用者自行确认", markdown)
             self.assertIn("审计档案与范围", markdown)
 
@@ -213,8 +224,11 @@ class CoreTests(unittest.TestCase):
             comparison = compare_with_baseline(findings, baseline)
             self.assertEqual(len(comparison["new"]), 1)
             review = root / "review.json"
-            review.write_text('{"reviews":{"abc":{"verdict":"confirmed"}}}', encoding="utf-8")
-            self.assertEqual(load_reviews(review)["abc"]["verdict"], "confirmed")
+            review.write_text('{"reviews":{"abc":{"verdict":"confirmed","verification_status":"verified","attempts":2}}}', encoding="utf-8")
+            loaded = load_reviews(review)["abc"]
+            self.assertEqual(loaded["verdict"], "confirmed")
+            self.assertEqual(loaded["verification_status"], "verified")
+            self.assertEqual(loaded["attempts"], 2)
 
     def test_detects_frameworks_from_maven_manifest(self):
         with TemporaryDirectory() as temp:

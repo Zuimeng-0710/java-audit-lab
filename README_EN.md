@@ -77,7 +77,7 @@ jal . -O
 jal .
 ```
 
-The legacy `java-audit scan .` command remains supported. The published v1.8.0 wheel continues to use the legacy command; `jal` is the recommended entry point for the current source tree and the next release.
+The legacy `java-audit scan .` command remains supported. The published v1.8.0 wheel continues to use the legacy command; `jal` is the recommended entry point for the v1.9.0 source tree.
 
 ### Short command reference
 
@@ -150,6 +150,7 @@ Each stage records available and missing evidence. Scanner output and human answ
 | Stable | Git differential audit | Change scope, weakened authorization, related locations, residual findings |
 | Stable | Multi-engine consolidation | SARIF, Semgrep, SpotBugs, Dependency-Check, and CodeQL |
 | Stable | Review archive | Local storage, import/export, and baseline classification |
+| Stable | Verification ledger | Task cards, progress, success criteria, evidence paths, and false-positive attribution |
 | Pilot | Anonymous evaluation corpus | Four pilot families with vulnerable, safe, and edge cases |
 
 **Status definitions:** Stable = covered by routine tests · Beta = usable and still evolving · Pilot = validating the direction and evaluation workflow
@@ -237,10 +238,13 @@ Explanation levels are `beginner`, `intermediate`, and `advanced`.
 
 The roadmap communicates current direction. It does not represent completed work or a promised release date.
 
-### Near term: next release
+### v1.9: verification loop
 
 - [x] `jal` short command, default scan behavior, and common option aliases
 - [x] Complete Chinese and English README files
+- [x] Generate a review-only verification task card for every finding
+- [x] Track verification status, assignee, attempts, success criteria, and evidence paths
+- [x] Add false-positive attribution, a verification ledger, and live outcome metrics
 - [ ] Expand the anonymous corpus across more rules, redacted real cases, and an independent holdout split
 - [ ] Add a stable machine-readable CLI summary and document exit codes
 - [ ] Add a GitHub Actions example for pull-request differential review
@@ -251,6 +255,8 @@ The roadmap communicates current direction. It does not represent completed work
 - [ ] More precise call graphs, interface implementations, and inheritance
 - [ ] Spring WebFlux, Dubbo, gRPC, and additional messaging entry points
 - [ ] Ownership evidence for object-level authorization and IDOR review
+- [ ] Safe manual validation steps and remediation retest records for authorized labs
+- [ ] Generate redacted regression cases from human review outcomes
 - [ ] Team configuration for suppression, accepted risk, and review verdicts
 
 ### Long term: extensible workbench
