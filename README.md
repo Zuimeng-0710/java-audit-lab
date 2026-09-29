@@ -80,39 +80,26 @@ Start-Process audit-report\report.html
 
 ## 🧭 审计工作流
 
-```mermaid
-flowchart TB
-    subgraph DISCOVERY["① 发现与建模"]
-        direction LR
-        A["项目画像<br/>框架 · 依赖 · 攻击面"] --> B["入口与信任边界<br/>路由 · 身份 · 数据归属"]
-        B --> C["Source / Sink 建模<br/>输入源 · 危险操作"]
-        C --> D["数据流扫描<br/>传播 · 净化 · 不确定路径"]
-    end
+#### 🔵 ① 发现与建模
 
-    subgraph VALIDATION["② 验证与泛化"]
-        direction LR
-        E["成立条件验证<br/>触发条件 · 可控性"] --> F["同类模式泛化<br/>相似调用 · 关联文件"]
-        F --> G["反证与绕过检查<br/>白名单 · 权限 · 安全控制"]
-    end
+| `1.1` 项目画像 | `1.2` 入口与信任边界 | `1.3` Source / Sink 建模 | `1.4` 数据流扫描 |
+|:---:|:---:|:---:|:---:|
+| 框架、依赖、攻击面 | 路由、身份、数据归属 | 输入源、危险操作 | 传播、净化、不确定路径 |
 
-    subgraph REVIEW["③ 结论与复测"]
-        direction LR
-        H["人工结论<br/>判定 · 依据 · 信心"] --> I["修复复测与报告<br/>基线 · 回归 · 归档"]
-    end
+#### 🟠 ② 验证与泛化
 
-    D --> E
-    G --> H
+| `2.1` 成立条件验证 | `2.2` 同类模式泛化 | `2.3` 反证与绕过检查 |
+|:---:|:---:|:---:|
+| 触发条件、输入可控性 | 相似调用、关联文件 | 白名单、权限、安全控制 |
 
-    classDef discovery fill:#eff6ff,stroke:#3b82f6,color:#172554,stroke-width:1.5px;
-    classDef validation fill:#fff7ed,stroke:#f97316,color:#7c2d12,stroke-width:1.5px;
-    classDef review fill:#ecfdf5,stroke:#10b981,color:#064e3b,stroke-width:1.5px;
-    class A,B,C,D discovery;
-    class E,F,G validation;
-    class H,I review;
-```
+#### 🟢 ③ 结论与复测
+
+| `3.1` 人工结论 | `3.2` 修复复测 | `3.3` 结果归档 |
+|:---:|:---:|:---:|
+| 判定、依据、信心 | 基线对比、回归验证 | 报告、结论、审计轨迹 |
 
 > [!NOTE]
-> 每个阶段都记录完成状态、已有证据和缺失证据。阶段只由扫描结果或人工回答推进，AI 解释不能单独改变审计状态。
+> 阶段按 **发现 → 验证 → 结论** 推进。每一步都记录已有证据和缺失证据；扫描结果或人工回答可以推进状态，AI 解释只作为辅助说明。
 
 ### 漏洞成立五问
 
