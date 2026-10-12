@@ -46,13 +46,26 @@ class CorpusTests(unittest.TestCase):
 
     def test_pilot_corpus_passes_strict_evaluation(self):
         result = evaluator.evaluate(CORPUS, strict_locations=True)
-        # 已登记边界不计入门禁误报，但必须单独计数并压低诚实口径的 Precision
-        self.assertEqual(result["totals"], {"cases": 12, "TP": 4, "FP": 0, "FN": 0, "TN": 5,
-                                            "UNSCORED": 0, "FP_CAVEATED": 0, "KNOWN": 3})
-        self.assertEqual(len(result["known_limitations"]), 3)
+        # 默认划分 train+validation：36 案例，9 条已登记边界
+        self.assertEqual(result["totals"], {"cases": 36, "TP": 16, "FP": 0, "FN": 0, "TN": 11,
+                                            "UNSCORED": 0, "FP_CAVEATED": 0, "KNOWN": 9})
+        self.assertEqual(result["totals"]["KNOWN"], 9)  # 9 个案例命中已登记边界
+        self.assertEqual(len(result["known_limitations"]), 11)  # 按（案例, 规则）对计为 11 条
         self.assertLess(result["precision_all"], 1.0,
                         "把已登记边界算回误报后 Precision 必须低于 100%，否则登记机制在撒谎")
         self.assertFalse(evaluator.should_fail(result, "any", True))
+
+    def test_holdout_split_passes_and_is_isolated(self):
+        # holdout 默认不参与评测；显式请求时必须通过，且与 train+validation 的案例集合不相交
+        default = evaluator.evaluate(CORPUS, strict_locations=True)
+        holdout = evaluator.evaluate(CORPUS, strict_locations=True, splits=("holdout",))
+        self.assertEqual(holdout["totals"]["cases"], 10)
+        self.assertEqual(holdout["totals"]["FP"], 0)
+        self.assertEqual(holdout["totals"]["FN"], 0)
+        self.assertFalse(evaluator.should_fail(holdout, "any", True))
+        default_ids = {c["case_id"] for c in default["cases"]}
+        holdout_ids = {c["case_id"] for c in holdout["cases"]}
+        self.assertFalse(default_ids & holdout_ids, "holdout 案例不得出现在默认评测中")
 
     def test_known_limitation_must_reproduce(self):
         # 登记过的边界一旦不再复现，评测器必须提示过期，防止清单腐烂成免检白名单

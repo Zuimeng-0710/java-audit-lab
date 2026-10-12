@@ -1,0 +1,25 @@
+{
+  "case_id": "TOKEN-001",
+  "title": "API 令牌从查询参数读取",
+  "category": "url-token",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "servlet"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "令牌出现在 URL 中会进入访问日志、代理日志与 Referer 头。",
+  "expected_rules": [
+    "JAL-TOKEN-001"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/token/ApiTokenController.java",
+      "line": 12,
+      "rule_id": "JAL-TOKEN-001"
+    }
+  ]
+}

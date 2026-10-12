@@ -1,0 +1,21 @@
+{
+  "case_id": "REDIR-002",
+  "title": "域名白名单校验后重定向到固定回跳地址",
+  "category": "open-redirect",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "servlet"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "校验通过后重定向到字面量地址，用户输入不进入重定向目标。",
+  "forbidden_rules": [
+    "JAL-REDIR-101"
+  ],
+  "security_controls": [
+    "域名白名单 + 固定回跳地址"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "case_id": "TOKEN-002",
+  "title": "令牌从 Authorization 头读取",
+  "category": "url-token",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "servlet"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "凭据走请求头，不进入 URL。",
+  "forbidden_rules": [
+    "JAL-TOKEN-001"
+  ],
+  "security_controls": [
+    "Authorization 头承载 Bearer 令牌"
+  ]
+}

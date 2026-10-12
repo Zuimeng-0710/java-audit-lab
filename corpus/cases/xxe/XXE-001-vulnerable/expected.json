@@ -1,0 +1,25 @@
+{
+  "case_id": "XXE-001",
+  "title": "默认配置的 DocumentBuilderFactory 解析用户 XML",
+  "category": "xxe",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "jaxp"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "工厂未禁用外部实体与 DOCTYPE 声明。",
+  "expected_rules": [
+    "JAL-XXE-001"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/xxe/XmlImportController.java",
+      "line": 17,
+      "rule_id": "JAL-XXE-001"
+    }
+  ]
+}

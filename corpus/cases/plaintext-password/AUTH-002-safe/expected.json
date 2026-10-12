@@ -1,0 +1,21 @@
+{
+  "case_id": "AUTH-002",
+  "title": "哈希口令用编码器校验",
+  "category": "plaintext-password",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "spring-security"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "存储的是 BCrypt 哈希，比较交给编码器。",
+  "forbidden_rules": [
+    "JAL-AUTH-001"
+  ],
+  "security_controls": [
+    "BCrypt 哈希 + passwordEncoder.matches"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "case_id": "UPLOAD-001",
+  "title": "上传文件名直接用于存储路径",
+  "category": "file-upload",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "原始文件名可含路径分隔符（../../），既可穿越目录也可落任意扩展名。",
+  "expected_rules": [
+    "JAL-UPLOAD-101"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/upload/AvatarController.java",
+      "line": 16,
+      "rule_id": "JAL-UPLOAD-101"
+    }
+  ]
+}

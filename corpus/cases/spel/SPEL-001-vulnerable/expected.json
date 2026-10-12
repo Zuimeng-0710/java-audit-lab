@@ -1,0 +1,26 @@
+{
+  "case_id": "SPEL-001",
+  "title": "用户输入直接进入 SpEL 解析并使用默认上下文",
+  "category": "spel",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "spel"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "StandardEvaluationContext 允许类型引用，可执行 T(java.lang.Runtime)。",
+  "expected_rules": [
+    "JAL-SPEL-001",
+    "JAL-EL-101"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/spel/FilterController.java",
+      "line": 19,
+      "rule_id": "JAL-SPEL-001"
+    }
+  ]
+}

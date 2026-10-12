@@ -1,0 +1,20 @@
+{
+  "case_id": "CRYPTO-002",
+  "title": "BCrypt 慢哈希存储口令",
+  "category": "weak-hash",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-security"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "自适应慢哈希带随机盐。",
+  "forbidden_rules": [
+    "JAL-CRYPTO-001"
+  ],
+  "security_controls": [
+    "BCrypt（代价因子 12）"
+  ]
+}

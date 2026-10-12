@@ -1,0 +1,112 @@
+# Java Audit Lab —— Pull Request 增量审计示例
+#
+# 用法：复制到待审计项目的 .github/workflows/pr-audit.yml。
+#
+# 思路：先扫 PR 的目标分支生成基线，再扫当前分支并与之比对。
+# 只有「本次变更引入的新发现」达到阈值时才让 CI 失败，
+# 历史遗留问题不会阻断合并。
+#
+# 前提：
+#   - fetch-depth: 0（浅克隆拿不到完整历史，增量比对会退化）
+#   - 仓库已安装 java-audit-lab（pip install java-audit-lab）
+
+name: java-audit-pr
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  incremental-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安装 Java Audit Lab
+        run: python -m pip install java-audit-lab
+
+      # 第一步：扫目标分支，得到比对基线
+      - name: 扫描基线分支
+        run: |
+          git checkout --force "origin/${{ github.event.pull_request.base.ref }}"
+          jal . --yes -o baseline-report
+
+      # 第二步：扫 PR 分支并与基线比对。
+      # --json-summary 把机器可读摘要写入 stdout，人类可读日志走 stderr。
+      # continue-on-error 让上传报告和判定这两步始终执行。
+      - name: 增量审计
+        id: audit
+        continue-on-error: true
+        run: |
+          git checkout --force "${{ github.event.pull_request.head.sha }}"
+          jal . --yes \
+            --fail-on high \
+            --baseline baseline-report/report.json \
+            --output audit-report \
+            --json-summary > summary.json
+
+      - name: 输出摘要
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          summary = json.load(open("summary.json"))
+          counts = summary["counts"]
+          baseline = summary["baseline"]
+          print(f"发现 {counts['findings']} 条；"
+                f"新增 {baseline['new']}，已修复 {baseline['fixed']}，"
+                f"位置变化 {baseline['relocated']}")
+          PY
+
+      - name: 在 PR 中留下结论
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - <<'PY' > comment.md
+          import json
+          summary = json.load(open("summary.json"))
+          counts = summary["counts"]
+          baseline = summary["baseline"]
+          verdict = "❌ 存在达到阈值的新增发现" if summary["exit_code"] == 1 else "✅ 未发现达到阈值的新增问题"
+          lines = [
+              f"## Java Audit Lab 增量审计：{verdict}",
+              "",
+              f"- 待复核发现：{counts['findings']} 条",
+              f"- 本次新增：{baseline['new']} 条；已修复：{baseline['fixed']} 条；位置变化：{baseline['relocated']} 条",
+              f"- 失败阈值：`{summary['fail_on']}`（只统计基线新增发现）",
+              "",
+              "完整证据见构建产物 `java-audit-report` 中的 `report.html`。",
+          ]
+          print("\n".join(lines))
+          PY
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
+
+      - name: 上传报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-audit-report
+          path: |
+            audit-report/
+            summary.json
+
+      # 第三步：按新增发现判定。退出码 1 表示达到阈值，2 表示扫描本身失败。
+      - name: 按新增发现判定
+        if: always()
+        run: |
+          if [ "${{ steps.audit.outcome }}" = "failure" ]; then
+            echo "::error::存在达到 fail-on 阈值的新增发现，请查看构建产物中的 report.html"
+            exit 1
+          fi

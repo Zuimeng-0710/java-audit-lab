@@ -99,6 +99,68 @@ class TaintEvidenceTests(unittest.TestCase):
         findings = self._run(code)
         self.assertEqual(len(findings), 2, "new URL(userUrl) 与 openConnection 都应命中")
 
+    def test_spring_param_extraction_supports_generic_types(self):
+        # 回归防护：Map<String, String> 泛型中的空格曾让变量名解析成 "String"，
+        # @RequestBody 的整个 payload 参数丢失污点标记。
+        code = (
+            "public class Demo {\n"
+            "    public Object search(@RequestBody java.util.Map<String, String> payload) {\n"
+            "        String filter = payload.get(\"filter\");\n"
+            "        org.springframework.expression.ExpressionParser parser =\n"
+            "                new org.springframework.expression.spel.standard.SpelExpressionParser();\n"
+            "        return parser.parseExpression(filter);\n"
+            "    }\n"
+            "}\n"
+        )
+        findings = [f for f in self._run(code) if f.rule_id == "JAL-EL-101"]
+        self.assertTrue(findings, "泛型参数 payload 的污点必须传播到表达式解析")
+
+    def test_spring_param_extraction_does_not_swallow_next_param(self):
+        # 回归防护：类型字符类里的逗号曾跨参数吞并，把 @RequestParam 之后的
+        # HttpServletResponse response 也错标为污点，导致固定字面量 sendRedirect 误报。
+        code = (
+            "public class Demo {\n"
+            "    public void logout(@RequestParam String redirect, javax.servlet.http.HttpServletResponse response)\n"
+            "            throws Exception {\n"
+            "        response.sendRedirect(\"https://app.example.com/home\");\n"
+            "    }\n"
+            "}\n"
+        )
+        findings = [f for f in self._run(code) if f.rule_id == "JAL-REDIR-101"]
+        self.assertFalse(findings, "字面量重定向目标不应因相邻参数被误标污点而报告")
+
+    def test_transferTo_only_reports_as_upload_sink(self):
+        # 回归防护：transferTo 曾同时挂在 PATH-101 与 UPLOAD-101 两个 sink 上，
+        # 同一行产生双重身份，安全样本被路径规则误报。
+        code = (
+            "public class Demo {\n"
+            "    public String upload(org.springframework.web.multipart.MultipartFile file) throws Exception {\n"
+            "        String storedName = java.util.UUID.randomUUID() + \".png\";\n"
+            "        java.nio.file.Path target = java.nio.file.Path.of(\"/srv/uploads\", storedName);\n"
+            "        file.transferTo(target);\n"
+            "        return storedName;\n"
+            "    }\n"
+            "}\n"
+        )
+        findings = self._run(code)
+        rules = {f.rule_id for f in findings}
+        self.assertIn("JAL-UPLOAD-101", rules)
+        self.assertNotIn("JAL-PATH-101", rules, "transferTo 不应再作为路径 sink 重复命中")
+
+    def test_http_client_sink_requires_client_receiver(self):
+        # 回归防护：.exchange( 曾不限调用者，任意业务方法 exchange(code) 都被当成
+        # RestTemplate 出站请求。sink 现在要求 restTemplate/webClient/httpClient/client 前缀。
+        code = (
+            "public class Demo {\n"
+            "    public String callback(javax.servlet.http.HttpServletRequest req) {\n"
+            "        String code = req.getParameter(\"code\");\n"
+            "        return oauthService.exchange(code);\n"
+            "    }\n"
+            "}\n"
+        )
+        findings = [f for f in self._run(code) if f.rule_id == "JAL-SSRF-101"]
+        self.assertFalse(findings, "业务方法 exchange 不应被当成 HTTP 客户端出站请求")
+
 
 if __name__ == "__main__":
     unittest.main()

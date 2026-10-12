@@ -1,0 +1,24 @@
+{
+  "case_id": "CRYPTO-001",
+  "title": "MD5 用于口令摘要",
+  "category": "weak-hash",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "无盐 MD5 可被彩虹表瞬间还原，口令存储必须用慢哈希。",
+  "expected_rules": [
+    "JAL-CRYPTO-001"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/crypto/PasswordHashService.java",
+      "line": 11,
+      "rule_id": "JAL-CRYPTO-001"
+    }
+  ]
+}

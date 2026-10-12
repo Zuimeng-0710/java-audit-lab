@@ -1,0 +1,18 @@
+{
+  "case_id": "XXE-003",
+  "title": "SAX 解析打包内静态资源而非用户输入",
+  "category": "xxe",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "jaxp"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "解析对象是打包内的静态资源，不含用户输入也没有外部实体引用；行级规则不区分数据来源。",
+  "forbidden_rules": [
+    "JAL-XXE-001"
+  ]
+}

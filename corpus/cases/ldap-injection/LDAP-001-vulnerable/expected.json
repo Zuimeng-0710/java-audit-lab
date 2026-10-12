@@ -1,0 +1,25 @@
+{
+  "case_id": "LDAP-001",
+  "title": "登录过滤串拼接用户名与口令",
+  "category": "ldap-injection",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "jndi"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "LDAP 元字符（*、)）可改写过滤逻辑实现认证绕过。",
+  "expected_rules": [
+    "JAL-LDAP-101"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/ldap/LoginController.java",
+      "line": 20,
+      "rule_id": "JAL-LDAP-101"
+    }
+  ]
+}

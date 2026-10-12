@@ -1,0 +1,21 @@
+{
+  "case_id": "LDAP-002",
+  "title": "LdapEncoder 对过滤值做 RFC 4515 编码",
+  "category": "ldap-injection",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "spring-ldap"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "编码函数会转义全部过滤元字符，但污点引擎把编码调用视为赋值传播而非净化。",
+  "forbidden_rules": [
+    "JAL-LDAP-101"
+  ],
+  "security_controls": [
+    "LdapEncoder.filterEncode 转义过滤元字符"
+  ]
+}

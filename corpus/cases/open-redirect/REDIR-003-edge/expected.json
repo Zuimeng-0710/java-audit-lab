@@ -1,0 +1,24 @@
+{
+  "case_id": "REDIR-003",
+  "title": "视图名前缀 redirect: 拼接相对路径可被协议相对地址绕过",
+  "category": "open-redirect",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "startsWith(\"/\") 检查放行 //evil.example.com 形式的协议相对地址。",
+  "expected_rules": [
+    "JAL-REDIR-101"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/redirect/ThemeController.java",
+      "line": 16,
+      "rule_id": "JAL-REDIR-101"
+    }
+  ]
+}

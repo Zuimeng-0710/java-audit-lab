@@ -1,0 +1,21 @@
+{
+  "case_id": "LOG-003",
+  "title": "脱敏函数处理后记录令牌片段",
+  "category": "sensitive-log",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "slf4j"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "行级规则看到 token 关键词即报告，无法确认 mask 的脱敏效果。",
+  "forbidden_rules": [
+    "JAL-LOG-001"
+  ],
+  "security_controls": [
+    "前 4 后 4 之外全部掩码"
+  ]
+}

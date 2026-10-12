@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### 语料库扩产与三分（Issue 路线图 v1.9）
+
+- 匿名语料从 4 类 12 案例扩到 **15 类 46 案例**：新增命令注入、XXE、反序列化、SpEL、LDAP 注入、开放重定向、文件上传、敏感日志、明文口令、URL 令牌、弱哈希 11 个类别
+- 新增 6 个真实脱敏样本（source: desensitized），expected.json 注明公开素材出处：CVE-2019-18394（Openfire SSRF）、山河 CTF 反序列化、fabric-sdk-java GHSA、AppSec Master SpEL 绕过、skf-labs LDAP
+- 语料按 **train 25 / validation 11 / holdout 10** 三分（接近 60/20/20）；评测器新增 `--split` 参数，CI 默认只跑 train+validation，holdout 发布前才运行，且与默认评测案例集合互不相交（有测试保证）
+- known-limitations 登记从 3 条扩到 13 条：每条边界写明 reason 与 plan，评测时原样公示，条目不复现时标记过期
+- schema 新增 derived_from 字段；校验器校验 manifest 中每个案例的 split 合法性
+- 语料扩产暴露并修复 4 个真实污点引擎缺陷：
+  - `Map<String, String>` 泛型参数变量名解析错误导致 `@RequestBody` 参数丢失污点
+  - 类型字符类中的逗号跨参数吞并，相邻参数被错标污点
+  - `transferTo` 同时挂在路径与上传两个 sink 上双重命中
+  - `.exchange(` 不限定调用者，任意业务方法被当成 HTTP 出站请求
+- 新增 8 项防回归测试（泛型参数提取、参数不吞并、transferTo 单一 sink、exchange 限定、holdout 隔离等），全套 116 项通过
+
 - 版本升级到 1.9.0，报告 JSON schema 升级到 1.4
 - 为每条发现生成不含攻击载荷的验证任务卡，记录入口、鉴权、执行人、尝试次数、成功判据、进展、证据路径与结果
 - 新增验证台账和实时统计，区分尚未开始、验证中、阻塞、已验证、确认漏洞与误报
@@ -23,6 +37,15 @@
 - 基线比对新增二次对齐：指纹不匹配时按规则、路径与归一化证据重试，旧基线、旧指纹方案和行号漂移都不会再产生噪声
 - 二次对齐按文件只消费一次旧记录，避免多条相似命中被合并成一条
 - 比对结果新增 `relocated` 字段，用于标注“仍存在但位置或指纹发生变化”的发现
+
+### 机器可读摘要与 CI 集成
+
+- 新增 `--json-summary`：把稳定结构的摘要输出到 stdout，人类可读日志改为输出到 stderr，CI 可直接解析 stdout
+- 摘要契约 `jal-summary/1`：包含工具版本、目标、扫描器、按严重级别与扫描器的计数、基线变化（新增、已有、已修复、位置变化）、验证进展、报告路径、`fail_on` 与退出码
+- 同一 `schema_version` 内只新增字段，不改名、不改类型、不删字段；扫描失败时 stdout 仍输出带 `status: error` 的最小摘要
+- README 与 README_EN 新增退出码说明：`0` 完成、`1` 达到失败阈值、`2` 无法完成扫描，并说明 `--fail-on` 只统计基线新增发现
+- 新增 `examples/github-actions/pr-audit.yml`：先扫目标分支生成基线，再扫 PR 分支比对，只在新增发现达到阈值时失败，并上传报告与在 PR 中留下结论
+- 新增 8 项摘要契约与退出码回归测试，覆盖字段完整性、严重级别桶、stdout 只含 JSON、日志转 stderr、`fail_on` 退出码 1 与错误路径退出码 2
 - 新增 9 项基线身份回归测试，覆盖插入无关行、表达式变更、重复命中与基线二次对齐
 
 ### 污点引擎精度（语料评测驱动）

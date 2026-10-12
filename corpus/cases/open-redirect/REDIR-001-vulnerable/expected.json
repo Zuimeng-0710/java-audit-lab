@@ -1,0 +1,25 @@
+{
+  "case_id": "REDIR-001",
+  "title": "登出后重定向到任意用户参数",
+  "category": "open-redirect",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "servlet"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "重定向目标完全由用户控制，可被钓鱼利用。",
+  "expected_rules": [
+    "JAL-REDIR-101"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/redirect/LogoutController.java",
+      "line": 14,
+      "rule_id": "JAL-REDIR-101"
+    }
+  ]
+}

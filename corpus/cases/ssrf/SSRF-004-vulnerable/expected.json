@@ -1,0 +1,25 @@
+{
+  "case_id": "SSRF-004",
+  "title": "主机参数拼进字面量 URL（favicon 代理模式）",
+  "category": "ssrf",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "servlet"
+  ],
+  "evidence_level": "inferred",
+  "source": "desensitized",
+  "license": "MIT",
+  "notes": "new URL 的首参是字面量开头（\"http://\" + host），行级规则的正向断言不命中；getImage 内部的 new URL(url) 命中。跨方法数据流（doGet → getImage）是污点引擎已知边界。",
+  "derived_from": "CVE-2019-18394（Openfire FaviconServlet，Positive Technologies 公开分析）",
+  "expected_rules": [
+    "JAL-SSRF-001"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/ssrf/FaviconProxyServlet.java",
+      "line": 24,
+      "rule_id": "JAL-SSRF-001"
+    }
+  ]
+}

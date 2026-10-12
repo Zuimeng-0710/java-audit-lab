@@ -1,0 +1,27 @@
+{
+  "case_id": "SPEL-003",
+  "title": "startsWith 前缀白名单可被 or 短路绕过",
+  "category": "spel",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "spel"
+  ],
+  "evidence_level": "inferred",
+  "source": "desensitized",
+  "license": "MIT",
+  "notes": "前缀检查可被 \"username=='a' or T(java.lang.Runtime)...\" 形式短路绕过（真实挑战题模式）。",
+  "derived_from": "AppSec Master SpEL 挑战公开 writeup",
+  "expected_rules": [
+    "JAL-SPEL-001",
+    "JAL-EL-101"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/spel/FilterController.java",
+      "line": 22,
+      "rule_id": "JAL-SPEL-001"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "case_id": "UPLOAD-003",
+  "title": "扩展名黑名单与原始文件名存储",
+  "category": "file-upload",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "黑名单挡不住 .jsp/.jspx、大小写与分号等变体，文件名与扩展名仍由用户决定。",
+  "expected_rules": [
+    "JAL-UPLOAD-101"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/upload/AvatarController.java",
+      "line": 19,
+      "rule_id": "JAL-UPLOAD-101"
+    }
+  ]
+}

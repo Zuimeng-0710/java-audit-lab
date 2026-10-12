@@ -1,0 +1,25 @@
+{
+  "case_id": "CMD-001",
+  "title": "运维探活功能拼接主机参数执行 ping",
+  "category": "command-injection",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "主机参数直接拼接到命令行，可注入 shell 元字符。",
+  "expected_rules": [
+    "JAL-CMD-001",
+    "JAL-CMD-101"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/cmd/HostCheckController.java",
+      "line": 12,
+      "rule_id": "JAL-CMD-001"
+    }
+  ]
+}

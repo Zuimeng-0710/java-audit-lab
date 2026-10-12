@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import atexit
+import contextlib
 import json
 import platform
 import shutil
@@ -73,6 +74,8 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument("-j", "--workers", type=int, help="并行扫描进程数；默认取 min(8, CPU 核心数)")
     scan.add_argument("-p", "--progress", action="store_true", default=None, help="强制开启进度日志（默认在 TTY 环境自动开启）")
     scan.add_argument("-q", "--no-progress", dest="progress", action="store_false", help="禁用进度日志")
+    scan.add_argument("--json-summary", action="store_true",
+                      help="把机器可读摘要以 JSON 输出到 stdout；人类可读日志改为输出到 stderr")
     scan.add_argument("-r", "--rules", action="append", default=[], help="外部规则文件路径（YAML 或 JSON，可重复使用）；自动与内置规则合并")
     scan.add_argument("-d", "--diff", nargs="?", const="WORKING", default=None, metavar="REF",
                       help="Git 增量审计：不带参数比较工作区未提交变更，带参数与指定分支或提交比较（如 main）")
@@ -128,7 +131,52 @@ def _confirm_scope(root: Path, auto_yes: bool) -> bool:
     return answer in {"y", "yes"}
 
 
-def _scan(args: argparse.Namespace) -> int:
+SUMMARY_SCHEMA = "jal-summary/1"
+
+
+def build_summary(*, target: str, scanners: list[str], findings: list, baseline: dict,
+                  playbook: dict | None, reports: dict, fail_on: str, exit_code: int) -> dict:
+    """构建稳定的机器可读摘要。
+
+    契约约定：同一 schema_version 内只新增字段，不改名、不改类型、不删字段。
+    CI 可以先读 schema_version 再决定是否解析。
+    """
+    by_severity = {level: 0 for level in SEVERITY_ORDER}
+    by_scanner: dict[str, int] = {}
+    for item in findings:
+        by_severity[item.severity] = by_severity.get(item.severity, 0) + 1
+        by_scanner[item.scanner] = by_scanner.get(item.scanner, 0) + 1
+    progress = (playbook or {}).get("progress", {})
+    return {
+        "schema_version": SUMMARY_SCHEMA,
+        "status": "ok",
+        "tool": {"name": "java-audit-lab", "version": __version__},
+        "target": target,
+        "scanners": sorted(scanners),
+        "counts": {
+            "findings": len(findings),
+            "by_severity": by_severity,
+            "by_scanner": dict(sorted(by_scanner.items())),
+        },
+        "baseline": {
+            "enabled": bool(baseline.get("enabled")),
+            "new": len(baseline.get("new") or []),
+            "existing": len(baseline.get("existing") or []),
+            "fixed": len(baseline.get("fixed") or []),
+            "relocated": len(baseline.get("relocated") or []),
+        },
+        "playbook": {
+            "total": progress.get("total", 0),
+            "completed": progress.get("completed", 0),
+            "partial": progress.get("partial", 0),
+        },
+        "reports": reports,
+        "fail_on": fail_on,
+        "exit_code": exit_code,
+    }
+
+
+def _scan(args: argparse.Namespace, summary_out: dict | None = None) -> int:
     target_path = Path(args.target).expanduser().resolve()
     if not _confirm_scope(target_path, args.yes):
         print("已取消。", file=sys.stderr)
@@ -324,12 +372,29 @@ def _scan(args: argparse.Namespace) -> int:
         except (OSError, ValueError) as exc:
             print(f"[报告] 无法自动打开：{exc}", file=sys.stderr)
     fail_on = args.fail_on or str(config.get("fail_on", "none"))
+    exit_code = 0
     if fail_on != "none":
         new = set(baseline["new"])
         threshold = SEVERITY_ORDER[fail_on]
         if any(item.fingerprint in new and SEVERITY_ORDER.get(item.severity, 99) <= threshold for item in findings):
-            return 1
-    return 0
+            exit_code = 1
+    if summary_out is not None:
+        summary_out.update(build_summary(
+            target=str(project.root),
+            scanners=list(requested),
+            findings=findings,
+            baseline=baseline,
+            playbook=playbook,
+            reports={
+                "json": str(json_path),
+                "sarif": str(output_dir / "report.sarif"),
+                "html": str(html_path),
+                "markdown": str(md_path),
+            },
+            fail_on=fail_on,
+            exit_code=exit_code,
+        ))
+    return exit_code
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -348,4 +413,12 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0 if all(case["passed"] for case in result["cases"]) else 1
+    if getattr(args, "json_summary", False):
+        # stdout 只留摘要；人类可读日志转到 stderr，保证 CI 能直接解析 stdout。
+        summary: dict = {}
+        with contextlib.redirect_stdout(sys.stderr):
+            code = _scan(args, summary)
+        payload = summary or {"schema_version": SUMMARY_SCHEMA, "status": "error", "exit_code": code}
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return code
     return _scan(args)
