@@ -1,18 +1,53 @@
 {
   "corpus": "corpus",
   "split": "train",
-  "scanner": "builtin",
+  "scanner": "builtin,taint,secrets",
+  "scanners": [
+    "builtin",
+    "taint",
+    "secrets"
+  ],
   "totals": {
     "cases": 12,
     "TP": 4,
     "FP": 0,
     "FN": 0,
-    "TN": 8,
-    "UNSCORED": 0
+    "TN": 5,
+    "UNSCORED": 0,
+    "FP_CAVEATED": 0,
+    "KNOWN": 3
   },
+  "known_stale": [],
   "precision": 1.0,
   "recall": 1.0,
   "f1": 1.0,
+  "precision_all": 0.5714285714285714,
+  "f1_all": 0.7272727272727273,
+  "precision_reviewed": 1.0,
+  "f1_reviewed": 1.0,
+  "known_limitations": [
+    {
+      "case_id": "PATH-003",
+      "rule_id": "JAL-PATH-101",
+      "severity_note": "工具报错，但已给出「文件名剥离」反证，复核人可快速消解",
+      "reason": "污点引擎把净化信号记为反证而非免罪符号，这是刻意设计：工具不断言 FilenameUtils.getName 之后一定安全（返回值仍可能为空串或异常输入）。",
+      "plan": "保持现状。安全结论由复核人下，工具只负责提供线索。"
+    },
+    {
+      "case_id": "SQL-003",
+      "rule_id": "JAL-SQL-101",
+      "severity_note": "工具对该安全样本报了警，且没有给出任何反证线索",
+      "reason": "污点引擎逐行分析，无法理解 switch 表达式把 sortKey 收敛到三个字面量常量；它只看到请求参数进入了拼接后的 SQL 文本。",
+      "plan": "需要跨语句的常量收敛分析（switch / if 链所有分支均为字面量时标记为收敛），属 Stage C-3 能力，短期不做。"
+    },
+    {
+      "case_id": "SSRF-002",
+      "rule_id": "JAL-SSRF-101",
+      "severity_note": "工具报错，但已给出「转义处理」与「字面量目标主机」双重反证",
+      "reason": "同理：URL 主机写在字面量里，且 nonce 经过 URLEncoder 编码，但 @ 注入与路径注入仍能改写目标主机，工具不断言安全。",
+      "plan": "保持现状，反证已足以让复核人在数秒内结案。"
+    }
+  ],
   "rule_stats": [
     {
       "rule_id": "JAL-PATH-001",
@@ -59,7 +94,7 @@
       "vuln": 0,
       "detected": 0,
       "safe": 1,
-      "fp": 0,
+      "fp": 1,
       "precision": 0.0,
       "recall": 0.0,
       "f1": 0.0
@@ -76,7 +111,17 @@
         "JAL-SQL-001"
       ],
       "missing_rules": [],
-      "extras": [],
+      "extras": [
+        {
+          "rule_id": "JAL-SQL-101",
+          "path": "src/main/java/lab/corpus/sql/OrderQueryController.java",
+          "line": 28,
+          "evidence": "ResultSet rs = stmt.executeQuery(\"SELECT id, amount FROM orders WHERE remark = '\" + userInput + \"'\");",
+          "scanner": "taint",
+          "confidence": "medium",
+          "caveated": false
+        }
+      ],
       "location_misses": []
     },
     {
@@ -94,7 +139,7 @@
       "category": "sql-injection",
       "variant": "edge",
       "expected": "safe",
-      "status": "TN",
+      "status": "KNOWN",
       "fp_rules": [],
       "unexpected_rules": [],
       "extras": []
@@ -109,7 +154,26 @@
         "JAL-SSRF-001"
       ],
       "missing_rules": [],
-      "extras": [],
+      "extras": [
+        {
+          "rule_id": "JAL-SSRF-101",
+          "path": "src/main/java/lab/corpus/ssrf/WebhookController.java",
+          "line": 21,
+          "evidence": "URL target = new URL(userUrl);",
+          "scanner": "taint",
+          "confidence": "medium",
+          "caveated": false
+        },
+        {
+          "rule_id": "JAL-SSRF-101",
+          "path": "src/main/java/lab/corpus/ssrf/WebhookController.java",
+          "line": 22,
+          "evidence": "HttpURLConnection conn = (HttpURLConnection) target.openConnection();",
+          "scanner": "taint",
+          "confidence": "medium",
+          "caveated": false
+        }
+      ],
       "location_misses": []
     },
     {
@@ -117,8 +181,10 @@
       "category": "ssrf",
       "variant": "safe",
       "expected": "safe",
-      "status": "TN",
-      "fp_rules": [],
+      "status": "KNOWN",
+      "fp_rules": [
+        "JAL-SSRF-101"
+      ],
       "unexpected_rules": [],
       "extras": []
     },
@@ -142,7 +208,17 @@
         "JAL-PATH-001"
       ],
       "missing_rules": [],
-      "extras": [],
+      "extras": [
+        {
+          "rule_id": "JAL-PATH-101",
+          "path": "src/main/java/lab/corpus/path/AttachmentController.java",
+          "line": 24,
+          "evidence": "File target = new File(storageRoot.toString(), fileName);",
+          "scanner": "taint",
+          "confidence": "medium",
+          "caveated": false
+        }
+      ],
       "location_misses": []
     },
     {
@@ -160,7 +236,7 @@
       "category": "path-traversal",
       "variant": "edge",
       "expected": "safe",
-      "status": "TN",
+      "status": "KNOWN",
       "fp_rules": [],
       "unexpected_rules": [],
       "extras": []

@@ -208,12 +208,20 @@ def _scan_file(task: tuple[str, str, tuple[Rule, ...]]) -> list[Finding]:
     relative = path.relative_to(root).as_posix()
     lines = content.splitlines()
     findings: list[Finding] = []
+    # 位移容忍身份（issue #6）：规则 + 相对路径 + 空白归一化命中文本 + 同文本出现序号。
+    # 刻意不含绝对行号——在命中行上方插入空行或注释不会生成新身份、也不会把
+    # 旧基线条目误标为已修复。同一文件里重复的相同命中靠序号区分。
+    occurrences: dict[tuple[str, str, str], int] = {}
     for line_number, line in enumerate(lines, start=1):
         for rule in rules:
             match = rule.pattern.search(line)
             if not match:
                 continue
-            identity = f"{rule.rule_id}:{relative}:{line_number}:{line.strip()}"
+            normalized = " ".join(line.split())
+            key = (rule.rule_id, relative, normalized)
+            index = occurrences.get(key, 0)
+            occurrences[key] = index + 1
+            identity = f"{rule.rule_id}:{relative}:{normalized}:{index}"
             trace = _local_trace(lines, line_number - 1, relative, line)
             findings.append(Finding(
                 rule_id=rule.rule_id,
