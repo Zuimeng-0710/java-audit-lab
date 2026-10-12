@@ -8,7 +8,7 @@
 #
 # 前提：
 #   - fetch-depth: 0（浅克隆拿不到完整历史，增量比对会退化）
-#   - 仓库已安装 java-audit-lab（pip install java-audit-lab）
+#   - 从固定 Git 标签安装 Java Audit Lab，确保 CI 使用经过发布验证的版本
 
 name: java-audit-pr
 
@@ -34,7 +34,7 @@ jobs:
           python-version: "3.12"
 
       - name: 安装 Java Audit Lab
-        run: python -m pip install java-audit-lab
+        run: python -m pip install "git+https://github.com/Zuimeng-0710/java-audit-lab.git@v2.0.1"
 
       # 第一步：扫目标分支，得到比对基线
       - name: 扫描基线分支

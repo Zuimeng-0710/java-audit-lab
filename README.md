@@ -261,7 +261,7 @@ jal . --yes -f high --json-summary > summary.json
 {
   "schema_version": "jal-summary/1",
   "status": "ok",
-  "tool": {"name": "java-audit-lab", "version": "2.0.0"},
+  "tool": {"name": "java-audit-lab", "version": "2.0.1"},
   "target": "/path/to/project",
   "scanners": ["builtin", "secrets", "taint"],
   "counts": {"findings": 12, "by_severity": {}, "by_scanner": {}},
@@ -316,6 +316,7 @@ Pull Request 自动增量审计的 Actions 示例见 [`examples/github-actions/p
 
 ## 当前边界
 
+- 内置规则与 `taint` 只分析 Java `.java`；配置凭据扫描覆盖 YAML、JSON、XML、Properties 与 `.env`。Python、JavaScript/TypeScript、Go、PHP 和 C# 文件可能出现在项目清单中，但当前不由内置代码规则分析。
 - `builtin` 与 `taint` 目前不提供完整的跨方法、跨模块路径证明。
 - 未识别到权限声明表示证据缺失，不代表接口一定没有访问控制。
 - 反射、动态分派、运行时配置和生成源码可能降低静态分析覆盖率。

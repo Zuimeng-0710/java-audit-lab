@@ -73,6 +73,13 @@ class CoreTests(unittest.TestCase):
             self.assertIn("深色模式", page)
             self.assertIn("审计档案与范围", page)
             self.assertIn("扫描覆盖清单", page)
+            self.assertIn("尚未建立基线", page)
+            self.assertIn("首次扫描不计算新增", page)
+            self.assertIn("生产代码线索", page)
+            self.assertIn("语言覆盖边界", page)
+            self.assertIn("归并后主来源", page)
+            self.assertIn("合计与最终线索一致", page)
+            self.assertIn('id="overview-confirmed"', page)
             self.assertIn(".page{width:100%;max-width:none", page)
             self.assertIn("text-overflow:ellipsis", page)
             self.assertIn("@media(max-width:760px)", page)
@@ -90,6 +97,20 @@ class CoreTests(unittest.TestCase):
             self.assertIn("验证台账", markdown)
             self.assertIn("授权依据：未填写；授权状态由使用者自行确认", markdown)
             self.assertIn("审计档案与范围", markdown)
+
+            enabled_baseline = {
+                "enabled": True,
+                "new": [result.findings[0].fingerprint],
+                "existing": [],
+                "fixed": [],
+            }
+            _, baseline_html, _ = write_reports(
+                root / "report-with-baseline", info, result.findings, [result], baseline=enabled_baseline,
+            )
+            baseline_page = baseline_html.read_text(encoding="utf-8")
+            self.assertIn("基线新增", baseline_page)
+            self.assertIn("相对上一份报告", baseline_page)
+            self.assertNotIn("尚未建立基线", baseline_page)
 
     def test_authorization_matrix_has_readable_filters_and_fixed_columns(self):
         section = _authz_section({
@@ -258,6 +279,12 @@ class CoreTests(unittest.TestCase):
             self.assertFalse(config["cache"])
             self.assertEqual(config["report_owner"], "security-team")
             self.assertEqual(config["authorization_ref"], "AUTH-001")
+
+    def test_bare_none_fail_on_means_disabled_threshold(self):
+        with TemporaryDirectory() as temp:
+            path = Path(temp) / ".java-audit.yml"
+            path.write_text("fail_on: none\n", encoding="utf-8")
+            self.assertEqual(load_config(path)["fail_on"], "none")
 
     def test_rejects_missing_explicit_config_and_invalid_list_fields(self):
         with TemporaryDirectory() as temp:

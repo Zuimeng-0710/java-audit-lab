@@ -1,0 +1,23 @@
+# Java Audit Lab scans its own repository only for release hygiene.
+# Deliberately vulnerable corpora, demos, packaged benchmarks, and local tooling
+# are evaluated by their dedicated test commands instead of the self-scan.
+scanners:
+  - builtin
+  - secrets
+  - taint
+fail_on: "none"
+cache: true
+exclude_paths:
+  - corpus/*
+  - examples/*
+  - audit/benchmarks/*
+  - .venv/*
+  - venv/*
+  - .m2-test/*
+  - tmp/*
+extra_rules: []
+public_endpoints: []
+report_owner: ""
+authorization_ref: ""
+scope_note: "Java Audit Lab 自身仓库；故意存在漏洞的语料、示例和基准样本已排除"
+retention_note: "本地自检报告不提交到仓库；公开前检查路径与环境信息"

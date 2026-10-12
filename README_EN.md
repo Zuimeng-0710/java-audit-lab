@@ -310,6 +310,7 @@ Roadmap priority will follow reproducible Java samples and regression tests. Ope
 
 ## Current limitations
 
+- Built-in rules and `taint` analyze Java `.java` files only. Configuration-secret scanning covers YAML, JSON, XML, Properties, and `.env`. Python, JavaScript/TypeScript, Go, PHP, and C# files may appear in the inventory but are not analyzed by the built-in code rules.
 - `builtin` and `taint` do not yet prove complete interprocedural or cross-module paths.
 - Missing authorization evidence does not prove that an endpoint is unprotected.
 - Reflection, dynamic dispatch, runtime configuration, and generated source may reduce coverage.

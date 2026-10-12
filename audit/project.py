@@ -8,7 +8,11 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 
-IGNORED_DIRS = {".git", ".gradle", ".idea", ".mvn", ".java-audit-cache", "audit-report", "build", "dist", "node_modules", "out", "output", "target"}
+IGNORED_DIRS = {
+    ".git", ".gradle", ".idea", ".mvn", ".m2-test", ".java-audit-cache",
+    ".venv", "venv", "__pycache__", "audit-report", "build", "dist",
+    "node_modules", "out", "output", "target", "tmp",
+}
 CONFIG_SUFFIXES = {".yml", ".yaml", ".properties", ".xml", ".json", ".env"}
 SOURCE_SUFFIXES = {".java", ".kt", ".kts", ".groovy", ".scala"}
 WEB_SUFFIXES = {".jsp", ".jspx", ".html", ".htm", ".js", ".ts", ".css", ".vue"}
@@ -121,6 +125,8 @@ def source_scope(path: str | Path) -> str:
     joined = "/".join(parts)
     if "generated" in parts or "build/generated" in joined or "target/generated" in joined:
         return "generated"
+    if "corpus" in parts or any(part in {"benchmark", "benchmarks", "fixture", "fixtures"} for part in parts):
+        return "fixture"
     if "src/test" in joined or "src/it" in joined or "test" in parts or "tests" in parts:
         return "test"
     if any(part in {"example", "examples", "sample", "samples", "demo", "demos"} for part in parts):

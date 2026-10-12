@@ -110,6 +110,15 @@ def _summary(findings: list[Finding], reviews: dict[str, dict[str, Any]]) -> dic
 def _render_html(payload: dict[str, Any]) -> str:
     project, summary, baseline = payload["project"], payload["summary"], payload["baseline"]
     counts = summary["by_severity"]
+    scope_counts = summary.get("by_scope") or {}
+    production_total = int(scope_counts.get("production", 0))
+    test_total = int(scope_counts.get("test", 0)) + int(scope_counts.get("fixture", 0))
+    example_total = int(scope_counts.get("example", 0))
+    confirmed_total = int((payload.get("verification_summary") or {}).get("confirmed", 0))
+    baseline_enabled = bool(baseline.get("enabled"))
+    baseline_label = "基线新增" if baseline_enabled else "尚未建立基线"
+    baseline_value = str(len(baseline.get("new", []))) if baseline_enabled else "—"
+    baseline_note = "相对上一份报告" if baseline_enabled else "首次扫描不计算新增"
     risk_score = max((int(item.get("review_priority", 0)) for item in payload["findings"]), default=0)
     new_set = set(baseline.get("new", []))
     cards = "".join(_finding_card(f, f["fingerprint"] in new_set) for f in payload["findings"]) or '<div class="empty-state"><b>没有发现匹配项</b><span>请确认项目包含 Java 文件，并查看扫描器运行状态。</span></div>'
@@ -154,12 +163,22 @@ def _render_html(payload: dict[str, Any]) -> str:
         f'<span class="bar-value">{cnt}</span></div>'
         for c, cnt in cwe_top
     ) or '<div class="empty-mini">无 CWE 数据</div>'
-    scanner_max = max((int(s.get("finding_count", 0)) for s in payload["scanners"]), default=1) or 1
+    # 使用归并后线索的主扫描器归属，保证图表合计与顶部“全部线索”一致。
+    # 各 runner 的原始 finding_count 可能包含随后被跨引擎归并的重复命中。
+    primary_scanner_counts: dict[str, int] = {}
+    for item in payload["findings"]:
+        scanner = str(item.get("scanner") or "unknown")
+        primary_scanner_counts[scanner] = primary_scanner_counts.get(scanner, 0) + 1
+    scanner_names = [str(item.get("name") or "unknown") for item in payload["scanners"]]
+    for scanner in primary_scanner_counts:
+        if scanner not in scanner_names:
+            scanner_names.append(scanner)
+    scanner_max = max(primary_scanner_counts.values(), default=1) or 1
     scanner_bars = "".join(
-        f'<div class="bar-row"><span class="bar-label">{html.escape(s["name"])}</span>'
-        f'<div class="bar-track"><i class="bar-fill" style="width:{int(s.get("finding_count", 0)) / scanner_max * 100:.0f}%;background:{"var(--ok)" if s.get("success") else "var(--medium)"}"></i></div>'
-        f'<span class="bar-value">{s.get("finding_count", 0)}</span></div>'
-        for s in payload["scanners"]
+        f'<div class="bar-row"><span class="bar-label">{html.escape(name)}</span>'
+        f'<div class="bar-track"><i class="bar-fill" style="width:{primary_scanner_counts.get(name, 0) / scanner_max * 100:.0f}%;background:var(--ok)"></i></div>'
+        f'<span class="bar-value">{primary_scanner_counts.get(name, 0)}</span></div>'
+        for name in scanner_names
     ) or '<div class="empty-mini">无扫描器数据</div>'
     conclusion_label_map = {"proven": "已证明路径", "inferred": "推测路径", "missing": "路径缺失", "unresolved": "动态未解析"}
     conclusion_colors = {"已证明路径": "var(--critical)", "推测路径": "var(--medium)", "路径缺失": "var(--low)", "动态未解析": "var(--brand)"}
@@ -275,10 +294,10 @@ button.location{{display:block;max-width:min(54vw,840px);overflow:hidden;text-ov
 </aside>
 <main class="main" data-report="{report_id}"><div class="topbar"><div><h1>{html.escape(project['name'])}</h1><div class="meta-chips"><span>{html.escape(project['build_system'])}</span><span>{project['java_files']} 文件</span><span>{html.escape(framework_text)}</span><span>最高关注指数 {risk_score}</span></div></div><div class="top-actions"><button class="btn theme-toggle" id="theme" title="切换明暗主题"><span class="theme-icon">☾</span><span data-theme-label>深色模式</span></button><button class="btn btn-primary" id="export">↓ 导出复核</button><a class="btn" href="report.json" download>JSON</a><a class="btn" href="report.sarif" download>SARIF</a><a class="btn" href="report.md" download>MD</a></div></div>
 <div class="page">
-<section class="overview" id="overview"><div class="metric" style="--dot:var(--brand)"><span class="metric-label"><i class="dot"></i>全部线索</span><strong>{total}</strong><small>等待人工判断</small></div><div class="metric" style="--dot:var(--critical)"><span class="metric-label"><i class="dot"></i>严重</span><strong>{counts['critical']}</strong><small>优先复核</small></div><div class="metric" style="--dot:var(--high)"><span class="metric-label"><i class="dot"></i>高危</span><strong>{counts['high']}</strong><small>需要关注</small></div><div class="metric" style="--dot:var(--medium)"><span class="metric-label"><i class="dot"></i>中危</span><strong>{counts['medium']}</strong><small>结合上下文</small></div><div class="metric" style="--dot:var(--cyan)"><span class="metric-label"><i class="dot"></i>基线新增</span><strong>{len(baseline.get('new', []))}</strong><small>本轮变化</small></div><div class="metric" style="--dot:var(--ok)"><span class="metric-label"><i class="dot"></i>已修复</span><strong>{len(baseline.get('fixed', []))}</strong><small>相对基线</small></div></section>{engagement_section}
+<section class="overview" id="overview"><div class="metric" style="--dot:var(--brand)"><span class="metric-label"><i class="dot"></i>全部待复核线索</span><strong>{total}</strong><small>不等于确认漏洞</small></div><div class="metric" style="--dot:var(--critical)"><span class="metric-label"><i class="dot"></i>生产代码线索</span><strong>{production_total}</strong><small>优先检查真实业务范围</small></div><div class="metric" style="--dot:var(--medium)"><span class="metric-label"><i class="dot"></i>测试与语料</span><strong>{test_total}</strong><small>测试代码和回归样本</small></div><div class="metric" style="--dot:var(--cyan)"><span class="metric-label"><i class="dot"></i>示例代码</span><strong>{example_total}</strong><small>演示目录中的线索</small></div><div class="metric" style="--dot:var(--cyan)"><span class="metric-label"><i class="dot"></i>{baseline_label}</span><strong>{baseline_value}</strong><small>{baseline_note}</small></div><div class="metric" style="--dot:var(--ok)"><span class="metric-label"><i class="dot"></i>已确认漏洞</span><strong id="overview-confirmed">{confirmed_total}</strong><small>来自人工复核结论</small></div></section>{engagement_section}
 
 
-<section class="section" id="dashboard"><div class="section-head"><div><h2>数据洞察</h2><p>四类视图协同：严重度分布、CWE 类型聚集、扫描器贡献、证据结论等级</p></div></div><div class="dashboard-grid"><div class="chart-card"><div class="chart-head"><b>严重度分布</b><small>按数量归一</small></div><div class="chart-body">{sev_bars}</div></div><div class="chart-card"><div class="chart-head"><b>CWE 类型聚集</b><small>前 8 类</small></div><div class="chart-body">{cwe_bars}</div></div><div class="chart-card"><div class="chart-head"><b>扫描器贡献</b><small>各扫描器命中数</small></div><div class="chart-body">{scanner_bars}</div></div><div class="chart-card"><div class="chart-head"><b>证据结论分布</b><small>路径证据等级</small></div><div class="chart-body">{conclusion_bars}</div></div></div></section>
+<section class="section" id="dashboard"><div class="section-head"><div><h2>数据洞察</h2><p>四类视图协同：严重度分布、CWE 类型聚集、归并后主来源、证据结论等级</p></div></div><div class="dashboard-grid"><div class="chart-card"><div class="chart-head"><b>严重度分布</b><small>全部代码范围</small></div><div class="chart-body">{sev_bars}</div></div><div class="chart-card"><div class="chart-head"><b>CWE 类型聚集</b><small>前 8 类</small></div><div class="chart-body">{cwe_bars}</div></div><div class="chart-card"><div class="chart-head"><b>归并后主来源</b><small>合计与最终线索一致</small></div><div class="chart-body">{scanner_bars}</div></div><div class="chart-card"><div class="chart-head"><b>证据结论分布</b><small>路径证据等级</small></div><div class="chart-body">{conclusion_bars}</div></div></div></section>
 <section class="section" id="scanners"><div class="section-head"><div><h2>扫描器运行状态</h2><p>任一扫描器失败都不会丢失其他扫描证据</p></div></div><div class="scanner-grid">{scanner_cards}</div><div class="method-card"><span class="method-icon">?</span><div><b>可证伪复核</b><p>{html.escape(payload['disclaimer'])} 请同时寻找支持风险的证据与能够推翻风险假设的安全控制。</p></div></div></section>
 <section class="section" id="playbook"><div class="section-head"><div><h2>审计阶段 · Evidence Driven Playbook</h2><p>每个阶段只由可核验证据或人工回答驱动；『部分完成』表示仍有证据缺口</p></div><div class="progress"><span>已完成 <b>{playbook_progress.get('completed', 0)}</b> / {playbook_total}</span><i class="progress-track"><i class="progress-bar" style="width:{playbook_pct}%"></i></i></div></div><div class="stepper">{stepper}</div><div class="method-card"><span class="method-icon">◎</span><div><b>攻击面画像</b><p>{html.escape(surface_summary)}</p></div></div></section>{authz_section}{incremental_section}{verification_section}
 <section class="section" id="findings"><div class="section-head"><div><h2>复核工作区</h2><p>支持 cwe:89、path:Controller、scanner:codeql、priority:70 组合查询；J/K 切换条目</p></div></div><div class="toolbar"><input class="field" id="search" type="search" placeholder="搜索，或输入 cwe:89 / path:src…"><select class="field" id="severity"><option value="all">全部风险等级</option><option value="critical">严重</option><option value="high">高危</option><option value="medium">中危</option><option value="low">低危</option></select><select class="field" id="review-filter"><option value="all">全部复核状态</option><option value="unreviewed">尚未复核</option><option value="confirmed">确认漏洞</option><option value="false-positive">误报</option><option value="uncertain">仍不确定</option></select><select class="field" id="view-mode" title="切换展示方式"><option value="list">平铺列表</option><option value="by-severity">按严重度</option><option value="by-rule">按规则</option><option value="by-file">按文件</option><option value="by-path">按目录</option><option value="by-scanner">按引擎</option></select><div class="actions"><button class="btn" id="clear" title="清空本地复核">清空</button></div></div><div class="list-meta"><span>显示 <b id="visible-count">{total}</b> / {total} 条</span><span class="progress"><span>复核进度 <b id="review-count">{reviewed_start}</b> / {total}</span><i class="progress-track"><i class="progress-bar" id="progress-bar"></i></i></span></div><div id="finding-list">{cards}</div></section>
@@ -288,7 +307,7 @@ button.location{{display:block;max-width:min(54vw,840px);overflow:hidden;text-ov
 const storageKey='java-audit-review:'+document.querySelector('main').dataset.report.split(':')[0],imported={initial_json},state=Object.assign({{}},imported,JSON.parse(localStorage.getItem(storageKey)||'{{}}')),cards=[...document.querySelectorAll('.finding')];
 const save=()=>localStorage.setItem(storageKey,JSON.stringify(state));
 const RING_C=188.5;
-function updateLedger(){{const count=(field,value)=>cards.filter(c=>(state[c.dataset.fp]?.[field]||'')===value).length,set=(id,value)=>{{const el=document.querySelector(id);if(el)el.textContent=value}};set('#ledger-not-started',cards.filter(c=>!state[c.dataset.fp]?.verification_status||state[c.dataset.fp]?.verification_status==='not-started').length);set('#ledger-in-progress',count('verification_status','in-progress'));set('#ledger-blocked',count('verification_status','blocked'));set('#ledger-verified',count('verification_status','verified')+count('verification_status','retest-passed'));set('#ledger-confirmed',count('verdict','confirmed'));set('#ledger-false-positive',count('verdict','false-positive'))}}
+function updateLedger(){{const count=(field,value)=>cards.filter(c=>(state[c.dataset.fp]?.[field]||'')===value).length,set=(id,value)=>{{const el=document.querySelector(id);if(el)el.textContent=value}};set('#ledger-not-started',cards.filter(c=>!state[c.dataset.fp]?.verification_status||state[c.dataset.fp]?.verification_status==='not-started').length);set('#ledger-in-progress',count('verification_status','in-progress'));set('#ledger-blocked',count('verification_status','blocked'));set('#ledger-verified',count('verification_status','verified')+count('verification_status','retest-passed'));set('#ledger-confirmed',count('verdict','confirmed'));set('#overview-confirmed',count('verdict','confirmed'));set('#ledger-false-positive',count('verdict','false-positive'))}}
 function updateProgress(){{const reviewed=cards.filter(c=>state[c.dataset.fp]?.verdict).length;document.querySelector('#review-count').textContent=reviewed;document.querySelector('#progress-bar').style.width=(cards.length?reviewed/cards.length*100:0)+'%';const pct=cards.length?Math.round(reviewed/cards.length*100):0;const ring=document.querySelector('#ring-fg');if(ring){{ring.style.strokeDashoffset=(RING_C-RING_C*pct/100);document.querySelector('#ring-text').textContent=pct+'%';document.querySelector('#ring-count').textContent=reviewed+' / '+cards.length}}updateLedger()}}
 function matchesQuery(c,q){{if(!q)return true;return q.split(/\\s+/).every(token=>{{const parts=token.split(':',2);if(parts.length<2)return c.dataset.search.includes(token);const [key,value]=parts;if(key==='cwe')return c.dataset.cwe.includes(value);if(key==='path')return c.dataset.path.includes(value);if(key==='scanner')return c.dataset.scanner.includes(value);if(key==='priority')return Number(c.dataset.priority)>=Number(value||0);return c.dataset.search.includes(token)}})}}
 function groupBy(){{const mode=document.querySelector('#view-mode').value,list=document.querySelector('#finding-list');cards.forEach(c=>c.style.display='');if(mode==='list'){{const sorted=cards.slice().sort((a,b)=>Number(b.dataset.priority)-Number(a.dataset.priority)||a.dataset.path.localeCompare(b.dataset.path));list.innerHTML='';sorted.forEach(c=>list.appendChild(c));return}}const groups={{}},order={{'critical':0,'high':1,'medium':2,'low':3,'info':4}};cards.forEach(c=>{{if(c.classList.contains('hidden'))return;let key;if(mode==='by-severity')key=c.dataset.severity;else if(mode==='by-rule')key=c.dataset.cwe;else if(mode==='by-file'){{const p=c.dataset.path,i=p.lastIndexOf('/');key=i<0?p:p.substring(i+1)}}else if(mode==='by-path'){{const p=c.dataset.path,i=p.indexOf('/');key=i<0?'(root)':p.substring(0,i)}}else if(mode==='by-scanner'){{key=c.dataset.scanner.split(' + ')[0]||'unknown'}};(groups[key]=groups[key]||[]).push(c)}});list.innerHTML='';const keys=Object.keys(groups);if(mode==='by-severity')keys.sort((a,b)=>(order[a]??9)-(order[b]??9));else keys.sort();keys.forEach(key=>{{const h=document.createElement('div'),label=document.createElement('span'),meta=document.createElement('span'),button=document.createElement('button');h.className='group-header';label.textContent=key;meta.className='group-meta';meta.textContent=groups[key].length+' 条';button.className='group-btn';button.textContent='折叠';button.onclick=()=>{{const collapsed=h.dataset.collapsed==='true';h.dataset.collapsed=String(!collapsed);groups[key].forEach(c=>c.style.display=collapsed?'':'none');button.textContent=collapsed?'折叠':'展开'}};h.append(label,meta,button);list.appendChild(h);groups[key].forEach(c=>list.appendChild(c))}})}}
@@ -555,6 +574,20 @@ def _engagement_section(payload: dict[str, Any]) -> str:
     ) or '<span>未采集扩展名统计</span>'
     excluded = engagement.get("excluded_paths") or []
     excluded_text = "、".join(str(item) for item in excluded) if excluded else "未配置额外排除路径"
+    successful_names = {str(scanner.get("name")) for scanner in scanners if scanner.get("success")}
+    active_text = "、".join(sorted(successful_names)) if successful_names else "没有扫描器成功完成"
+    language_note = (
+        "内置规则与污点分析只分析 Java .java；配置凭据扫描覆盖 YAML、JSON、XML、Properties 与 .env。"
+        "CodeQL 可在已安装时分析 Java/Kotlin。Python、JavaScript/TypeScript、Go、PHP 与 C# "
+        "当前不由内置代码规则分析；文件清单中的数量不代表这些语言已完成安全扫描。"
+    )
+    target_warning = ""
+    if not project.get("manifests"):
+        target_warning = (
+            '<div class="method-card"><span class="method-icon">!</span><div><b>未发现 Java 构建清单</b>'
+            '<p>当前目录没有 pom.xml、build.gradle 或 build.gradle.kts。若 Java 文件主要来自示例、语料或依赖目录，'
+            '本报告不能代表宿主项目核心实现的安全状况。</p></div></div>'
+        )
     return (
         '<section class="section" id="engagement"><div class="section-head"><div><h2>审计档案与范围</h2>'
         '<p>记录本次扫描对象、代码快照、覆盖范围与报告适用边界，便于复核和后续重扫</p></div></div>'
@@ -565,7 +598,8 @@ def _engagement_section(payload: dict[str, Any]) -> str:
         f'<article class="dossier-card"><span>生成时间</span><b>{html.escape(generated)}</b><small>工具版本 Java Audit Lab {html.escape(str(payload.get("tool", {}).get("version", "")))}</small></article>'
         '</div><div class="scope-sheet"><div class="scope-block"><h3>扫描覆盖清单</h3><div class="scope-list">'
         f'<div class="scope-item"><span>项目文件</span><b>{int(inventory.get("total_files", 0))}</b></div>'
-        f'<div class="scope-item"><span>源代码文件</span><b>{int(inventory.get("source_files", project.get("java_files", 0)))}</b></div>'
+        f'<div class="scope-item"><span>JVM 源文件清单</span><b>{int(inventory.get("source_files", project.get("java_files", 0)))}</b></div>'
+        f'<div class="scope-item"><span>Java 实际分析文件</span><b>{int(project.get("java_files", 0))}</b></div>'
         f'<div class="scope-item"><span>配置文件</span><b>{int(inventory.get("config_files", 0))}</b></div>'
         f'<div class="scope-item"><span>Web 前端文件</span><b>{int(inventory.get("web_files", 0))}</b></div>'
         f'<div class="scope-item"><span>估算文本行数</span><b>{int(inventory.get("estimated_lines", 0)):,}</b></div>'
@@ -575,9 +609,11 @@ def _engagement_section(payload: dict[str, Any]) -> str:
         f'<div><b>扫描范围</b><span>{html.escape(str(engagement.get("scope_note", project.get("root", ""))))}</span></div>'
         f'<div><b>授权依据</b><span>{html.escape(str(engagement.get("authorization_ref", "未填写；授权状态由使用者自行确认")))}</span></div>'
         f'<div><b>排除路径</b><span>{html.escape(excluded_text)}</span></div>'
+        f'<div><b>本次成功扫描器</b><span>{html.escape(active_text)}</span></div>'
+        f'<div><b>语言覆盖边界</b><span>{html.escape(language_note)}</span></div>'
         f'<div><b>报告有效性</b><span>{html.escape(str(engagement.get("validity_note", "代码、配置或依赖变化后应重新扫描。")))}</span></div>'
         f'<div><b>数据保留</b><span>{html.escape(str(engagement.get("retention_note", "公开报告前检查敏感信息。")))}</span></div>'
-        '</div></div></div></section>'
+        f'</div></div></div>{target_warning}</section>'
     )
 
 
@@ -756,7 +792,7 @@ def _finding_card(finding: dict[str, Any], is_new: bool) -> str:
     ai_block = f'<details><summary>AI 分层解释</summary><div class="detail-body"><pre>{html.escape(ai)}</pre></div></details>' if ai else ""
     scanner_text = " + ".join(scanners)
     scope = str(finding.get("metadata", {}).get("scope", "production"))
-    scope_labels = {"production": "生产代码", "test": "测试代码", "generated": "生成代码", "example": "示例代码"}
+    scope_labels = {"production": "生产代码", "test": "测试代码", "fixture": "测试语料", "generated": "生成代码", "example": "示例代码"}
     endpoint_text = str(finding.get("metadata", {}).get("endpoint", "") or "")
     endpoint_tag = f'<span class="tag">{html.escape(endpoint_text)}</span>' if endpoint_text else ""
     search_text = " ".join([
@@ -865,8 +901,17 @@ def _render_markdown(payload: dict[str, Any]) -> str:
         lines.append(f"| {label} | {counts.get(level, 0)} |")
     lines.append("")
     lines.append(f"共 {summary['total']} 条待复核线索，已人工复核 {summary['reviewed']} 条。")
+    scopes = summary.get("by_scope") or {}
+    lines.append(
+        "范围分布：生产代码 "
+        f"{int(scopes.get('production', 0))} 条，测试与语料 "
+        f"{int(scopes.get('test', 0)) + int(scopes.get('fixture', 0))} 条，示例代码 "
+        f"{int(scopes.get('example', 0))} 条，生成代码 {int(scopes.get('generated', 0))} 条。"
+    )
     if baseline.get("enabled"):
         lines.append(f"基线对比：新增 {len(baseline.get('new', []))} 条，已有 {len(baseline.get('existing', []))} 条，已修复 {len(baseline.get('fixed', []))} 条。")
+    else:
+        lines.append("基线对比：尚未建立基线；本次属于首次扫描，不计算新增与已修复。")
     lines.append("")
     lines.append("### 技术栈与攻击面画像")
     lines.append("")
@@ -874,6 +919,7 @@ def _render_markdown(payload: dict[str, Any]) -> str:
     lines.append(f"- 构建系统：{project['build_system']}（{', '.join(project['manifests']) or '无构建清单'}）")
     lines.append(f"- 框架：{frameworks}")
     lines.append(f"- Java 源文件：{project['java_files']} 个")
+    lines.append("- 语言覆盖：内置规则与污点分析只分析 Java `.java`；配置凭据扫描覆盖 YAML、JSON、XML、Properties 与 `.env`。项目清单中的其他语言文件不代表已经完成代码安全分析。")
     entries = surface.get("entries", [])
     if entries:
         grouped: dict[str, list] = {}
@@ -1075,7 +1121,7 @@ def _render_markdown(payload: dict[str, Any]) -> str:
             lines.append(f"- 验证结果：{review.get('verification_result')}")
         lines.append(f"- 位置：`{loc['path']}:{loc['line']}`")
         scope = str(finding.get("metadata", {}).get("scope", "production"))
-        scope_name = {"production": "生产代码", "test": "测试代码", "generated": "生成代码", "example": "示例代码"}.get(scope, scope)
+        scope_name = {"production": "生产代码", "test": "测试代码", "fixture": "测试语料", "generated": "生成代码", "example": "示例代码"}.get(scope, scope)
         lines.append(f"- 代码范围：{scope_name}")
         lines.append(f"- 扫描器：{', '.join(finding.get('metadata', {}).get('scanners', [finding['scanner']]))}")
         record = finding.get("metadata", {}).get("evidence_record") or {}
