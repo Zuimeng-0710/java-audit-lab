@@ -1,0 +1,28 @@
+{
+  "case_id": "SSRF-105",
+  "title": "控制台输入驱动的出站请求（开源片段脱敏）",
+  "category": "ssrf",
+  "expected": "vulnerable",
+  "expected_rules": [
+    "JAL-SSRF-001"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/ssrf/ConsoleFetch.java",
+      "line": 15
+    },
+    {
+      "path": "src/main/java/lab/corpus/ssrf/ConsoleFetch.java",
+      "line": 16
+    }
+  ],
+  "scope": "production",
+  "frameworks": [
+    "console"
+  ],
+  "evidence_level": "certain",
+  "source": "desensitized",
+  "derived_from": "securitycipher/vulnerable-code-snippet (github.com/securitycipher/vulnerable-code-snippet) SSRF 示例",
+  "license": "MIT",
+  "notes": "非 Web 入口（System.in）。污点引擎的 source 只覆盖请求入口，此类场景只能靠行级规则命中 sink。"
+}

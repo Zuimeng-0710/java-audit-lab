@@ -1,0 +1,24 @@
+{
+  "case_id": "SQL-101",
+  "title": "Controller→Service→Mapper 三层传播的拼接查询",
+  "category": "sql-injection",
+  "expected": "vulnerable",
+  "expected_rules": [
+    "JAL-SQL-001"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/sql/OrderMapper.java",
+      "line": 18
+    }
+  ],
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "jdbc"
+  ],
+  "evidence_level": "certain",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "污点入口在 Controller，sink 在 Mapper。行级规则与方法边界无关所以能命中；方法内污点引擎对跨方法传播天然不可见，这是已登记的引擎边界。"
+}

@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### 语料第二轮扩产：跨方法样本与开源脱敏样本
+
+- 匿名语料从 46 案例扩到 **15 类 59 案例**：新增 11 个跨方法样本
+  （Controller → Service → Mapper 三层传播，覆盖 SQL / 命令注入 / SSRF / 路径遍历 / 敏感日志），
+  manifest 与 expected.json 标注 `cross_method`
+- 新增 5 个开源脱敏样本（derived_from 注明出处）：JoyChou93/java-sec-code 的
+  urlConnection vuln/sec、openStream、path_traversal vuln/sec，
+  以及 securitycipher/vulnerable-code-snippet 的控制台输入 SSRF 变体
+- 语料驱动修复 1 个真实规则盲区：`new java.net.URL(url)` 全限定写法此前完全漏报，
+  JAL-SSRF-001 正则增加可选 `java.net.` 前缀（SSRF-103 案例专门覆盖）
+- 新登记 1 条能力边界（SSRF-104：协议前置校验在跨行 if 中，行级规则不可见），
+  known-limitations 共 14 条
+- 划分调整为 train 33 / validation 13 / holdout 13；评测指标更新：
+  train+validation 门禁 P/R 100%（含边界口径 P 67.7%），holdout 门禁 100%（含边界 87.5%）
+- 新增 2 项防回归测试（全限定 URL 规则、跨方法案例通过性），全套 118 项通过
+
 ### 语料库扩产与三分（Issue 路线图 v1.9）
 
 - 匿名语料从 4 类 12 案例扩到 **15 类 46 案例**：新增命令注入、XXE、反序列化、SpEL、LDAP 注入、开放重定向、文件上传、敏感日志、明文口令、URL 令牌、弱哈希 11 个类别

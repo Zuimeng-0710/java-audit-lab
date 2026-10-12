@@ -92,6 +92,10 @@
       "type": "string",
       "description": "source 为 desensitized 时注明真实素材出处（公开 CVE 分析、writeup 或开源项目）"
     },
+    "cross_method": {
+      "type": "boolean",
+      "description": "污点入口与 sink 是否跨越方法/类边界（Controller→Service→Mapper 等），manifest 条目同步标注"
+    },
     "license": {
       "type": "string"
     },

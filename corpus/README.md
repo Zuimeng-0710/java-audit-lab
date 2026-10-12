@@ -14,16 +14,17 @@
 
 ## 规模与划分
 
-15 类 × (vulnerable / safe / edge) + 1 个真实脱敏变体 = **46 案例**。
+15 类，**59 案例**，其中 11 个跨方法样本（Controller → Service → Mapper 等）。
 
 | 划分 | 数量 | 用途 |
 |---|---:|---|
-| `train` | 25 | 规则开发可自由查看；edge 样本集中在 train |
-| `validation` | 11 | 调整规则时使用，vulnerable 与 safe 成对出现 |
-| `holdout` | 10 | **发布前才运行**，平时不针对它修改规则 |
+| `train` | 33 | 规则开发可自由查看；edge 样本集中在 train |
+| `validation` | 13 | 调整规则时使用，vulnerable 与 safe 成对出现 |
+| `holdout` | 13 | **发布前才运行**，平时不针对它修改规则 |
 
-6 个案例标注 `source: desensitized` 并在 `derived_from` 注明公开素材出处
-（CVE-2019-18394、山河 CTF、fabric-sdk-java GHSA、AppSec Master、skf-labs）。
+11 个案例标注 `source: desensitized` 并在 `derived_from` 注明公开素材出处
+（CVE-2019-18394、山河 CTF、fabric-sdk-java GHSA、AppSec Master、skf-labs、
+JoyChou93/java-sec-code、securitycipher/vulnerable-code-snippet）。
 
 ## 用法（仓库根目录）
 
@@ -45,5 +46,5 @@
 ## 指标与诚实声明
 
 见 [EVALUATION.md](EVALUATION.md)。要点：门禁口径（已登记边界不算误报）用于 CI 回归；
-对外说明能力时必须引用「含已登记边界」口径。46 案例不足以给出统计学上有意义的
+对外说明能力时必须引用「含已登记边界」口径。59 案例不足以给出统计学上有意义的
 准确率区间，扩到 150+ 案例后才适合公布分规则指标。

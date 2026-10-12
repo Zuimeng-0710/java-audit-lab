@@ -1,0 +1,21 @@
+{
+  "case_id": "LOG-102",
+  "title": "审计日志只记录非敏感标识",
+  "category": "sensitive-log",
+  "expected": "safe",
+  "forbidden_rules": [
+    "JAL-LOG-001"
+  ],
+  "security_controls": [
+    "敏感值不出现在日志语句"
+  ],
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "slf4j"
+  ],
+  "evidence_level": "certain",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "审计服务只接收 accountId，令牌不进入日志链路。"
+}

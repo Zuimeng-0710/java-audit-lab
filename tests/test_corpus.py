@@ -46,20 +46,33 @@ class CorpusTests(unittest.TestCase):
 
     def test_pilot_corpus_passes_strict_evaluation(self):
         result = evaluator.evaluate(CORPUS, strict_locations=True)
-        # 默认划分 train+validation：36 案例，9 条已登记边界
-        self.assertEqual(result["totals"], {"cases": 36, "TP": 16, "FP": 0, "FN": 0, "TN": 11,
-                                            "UNSCORED": 0, "FP_CAVEATED": 0, "KNOWN": 9})
-        self.assertEqual(result["totals"]["KNOWN"], 9)  # 9 个案例命中已登记边界
-        self.assertEqual(len(result["known_limitations"]), 11)  # 按（案例, 规则）对计为 11 条
+        # 默认划分 train+validation：46 案例，10 条已登记边界（第二轮扩产后）
+        self.assertEqual(result["totals"], {"cases": 46, "TP": 21, "FP": 0, "FN": 0, "TN": 15,
+                                            "UNSCORED": 0, "FP_CAVEATED": 0, "KNOWN": 10})
+        self.assertEqual(result["totals"]["KNOWN"], 10)  # 10 个案例命中已登记边界
+        self.assertEqual(len(result["known_limitations"]), 12)  # 按（案例, 规则）对计为 12 条
         self.assertLess(result["precision_all"], 1.0,
                         "把已登记边界算回误报后 Precision 必须低于 100%，否则登记机制在撒谎")
         self.assertFalse(evaluator.should_fail(result, "any", True))
+
+    def test_cross_method_cases_exist_and_pass(self):
+        # 跨方法案例（Controller→Service→Mapper 等）必须在所有划分下通过：
+        # 行级规则与方法边界无关，sink 行自包含即可命中，不依赖跨方法污点传播
+        manifest = json.loads((CORPUS / "manifest.json").read_text(encoding="utf-8"))
+        cross_ids = {c["case_id"] for c in manifest["cases"] if c.get("cross_method")}
+        self.assertGreaterEqual(len(cross_ids), 11, "跨方法案例不少于 11 个")
+        for splits in (("train", "validation"), ("holdout",)):
+            result = evaluator.evaluate(CORPUS, strict_locations=True, splits=splits)
+            statuses = {c["case_id"]: c["status"] for c in result["cases"]}
+            for case_id in cross_ids & set(statuses):
+                self.assertIn(statuses[case_id], ("TP", "TN", "KNOWN"),
+                              f"跨方法案例 {case_id} 在 {splits} 划分下意外失败")
 
     def test_holdout_split_passes_and_is_isolated(self):
         # holdout 默认不参与评测；显式请求时必须通过，且与 train+validation 的案例集合不相交
         default = evaluator.evaluate(CORPUS, strict_locations=True)
         holdout = evaluator.evaluate(CORPUS, strict_locations=True, splits=("holdout",))
-        self.assertEqual(holdout["totals"]["cases"], 10)
+        self.assertEqual(holdout["totals"]["cases"], 13)
         self.assertEqual(holdout["totals"]["FP"], 0)
         self.assertEqual(holdout["totals"]["FN"], 0)
         self.assertFalse(evaluator.should_fail(holdout, "any", True))

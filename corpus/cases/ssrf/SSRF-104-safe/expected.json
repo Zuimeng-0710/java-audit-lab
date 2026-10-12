@@ -1,0 +1,22 @@
+{
+  "case_id": "SSRF-104",
+  "title": "协议校验后再发起请求（java-sec-code 脱敏）",
+  "category": "ssrf",
+  "expected": "safe",
+  "forbidden_rules": [
+    "JAL-SSRF-001",
+    "JAL-SSRF-101"
+  ],
+  "security_controls": [
+    "协议白名单校验"
+  ],
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "certain",
+  "source": "desensitized",
+  "derived_from": "JoyChou93/java-sec-code (https://github.com/JoyChou93/java-sec-code) SSRF.java /urlConnection/sec",
+  "license": "MIT",
+  "notes": "脱敏自 urlConnection/sec 模式：入口处限定 http/https 协议后才放行。行级规则看不到跨行的前置校验，会报 sink 行——已登记为已知边界。"
+}

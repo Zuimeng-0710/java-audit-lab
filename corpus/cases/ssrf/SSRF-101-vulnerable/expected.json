@@ -1,0 +1,29 @@
+{
+  "case_id": "SSRF-101",
+  "title": "Controller→HttpHelper 传播的出站请求（java-sec-code 脱敏）",
+  "category": "ssrf",
+  "expected": "vulnerable",
+  "expected_rules": [
+    "JAL-SSRF-001"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/ssrf/HttpHelper.java",
+      "line": 12
+    },
+    {
+      "path": "src/main/java/lab/corpus/ssrf/HttpHelper.java",
+      "line": 13
+    }
+  ],
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "jdbc-url"
+  ],
+  "evidence_level": "certain",
+  "source": "desensitized",
+  "derived_from": "JoyChou93/java-sec-code (https://github.com/JoyChou93/java-sec-code) SSRF.java /urlConnection/vuln + HttpUtils.URLConnection",
+  "license": "MIT",
+  "notes": "脱敏自 java-sec-code 的 urlConnection/vuln 模式：入口参数直接传入工具类发起出站请求。"
+}

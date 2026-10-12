@@ -98,6 +98,13 @@
       "severity_note": "MD5 仅用于非对抗性的文件完整性校验",
       "reason": "行级规则不区分哈希用途：口令摘要与传输校验和都调用同一个 getInstance(\"MD5\")。",
       "plan": "需要方法级别的用途推断（变量名/调用方），短期不做；教学上保留报告让学习者自行判断场景。"
+    },
+    {
+      "case_id": "SSRF-104",
+      "rule_id": "JAL-SSRF-001",
+      "severity_note": "工具报错，但入口处已限定 http/https 协议（java-sec-code urlConnection/sec 脱敏模式）",
+      "reason": "协议校验在 Controller 的前置 if 中，sink 行在 HttpHelper 内。行级规则看不到跨行前置校验，也无法确认校验逻辑充分性（例如仍可访问内网 http 地址）。",
+      "plan": "引入跨行「校验后调用」线索需要语句级分析（Stage C-3）；现阶段依赖人工复核 if 条件。"
     }
   ]
 }

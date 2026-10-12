@@ -38,6 +38,24 @@
       "path": "cases/command-injection/CMD-003-edge"
     },
     {
+      "case_id": "CMD-101",
+      "category": "command-injection",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "train",
+      "path": "cases/command-injection/CMD-101-vulnerable",
+      "cross_method": true
+    },
+    {
+      "case_id": "CMD-102",
+      "category": "command-injection",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "train",
+      "path": "cases/command-injection/CMD-102-safe",
+      "cross_method": true
+    },
+    {
       "case_id": "DESER-001",
       "category": "deserialization",
       "expected": "vulnerable",
@@ -158,6 +176,24 @@
       "path": "cases/path-traversal/PATH-003-edge"
     },
     {
+      "case_id": "PATH-101",
+      "category": "path-traversal",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "train",
+      "path": "cases/path-traversal/PATH-101-vulnerable",
+      "cross_method": true
+    },
+    {
+      "case_id": "PATH-102",
+      "category": "path-traversal",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "holdout",
+      "path": "cases/path-traversal/PATH-102-safe",
+      "cross_method": true
+    },
+    {
       "case_id": "AUTH-001",
       "category": "plaintext-password",
       "expected": "vulnerable",
@@ -230,6 +266,24 @@
       "path": "cases/sensitive-log/LOG-003-edge"
     },
     {
+      "case_id": "LOG-101",
+      "category": "sensitive-log",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "train",
+      "path": "cases/sensitive-log/LOG-101-vulnerable",
+      "cross_method": true
+    },
+    {
+      "case_id": "LOG-102",
+      "category": "sensitive-log",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "train",
+      "path": "cases/sensitive-log/LOG-102-safe",
+      "cross_method": true
+    },
+    {
       "case_id": "SPEL-001",
       "category": "spel",
       "expected": "vulnerable",
@@ -278,20 +332,30 @@
       "path": "cases/sql-injection/SQL-003-edge"
     },
     {
+      "case_id": "SQL-101",
+      "category": "sql-injection",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "train",
+      "path": "cases/sql-injection/SQL-101-vulnerable",
+      "cross_method": true
+    },
+    {
+      "case_id": "SQL-102",
+      "category": "sql-injection",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "train",
+      "path": "cases/sql-injection/SQL-102-safe",
+      "cross_method": true
+    },
+    {
       "case_id": "SSRF-001",
       "category": "ssrf",
       "expected": "vulnerable",
       "variant": "vulnerable",
       "split": "validation",
       "path": "cases/ssrf/SSRF-001-vulnerable"
-    },
-    {
-      "case_id": "SSRF-004",
-      "category": "ssrf",
-      "expected": "vulnerable",
-      "variant": "vulnerable",
-      "split": "validation",
-      "path": "cases/ssrf/SSRF-004-vulnerable"
     },
     {
       "case_id": "SSRF-002",
@@ -308,6 +372,57 @@
       "variant": "edge",
       "split": "train",
       "path": "cases/ssrf/SSRF-003-edge"
+    },
+    {
+      "case_id": "SSRF-004",
+      "category": "ssrf",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "validation",
+      "path": "cases/ssrf/SSRF-004-vulnerable"
+    },
+    {
+      "case_id": "SSRF-101",
+      "category": "ssrf",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "validation",
+      "path": "cases/ssrf/SSRF-101-vulnerable",
+      "cross_method": true
+    },
+    {
+      "case_id": "SSRF-102",
+      "category": "ssrf",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "train",
+      "path": "cases/ssrf/SSRF-102-safe",
+      "cross_method": true
+    },
+    {
+      "case_id": "SSRF-103",
+      "category": "ssrf",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "holdout",
+      "path": "cases/ssrf/SSRF-103-vulnerable"
+    },
+    {
+      "case_id": "SSRF-104",
+      "category": "ssrf",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "validation",
+      "path": "cases/ssrf/SSRF-104-safe",
+      "cross_method": true
+    },
+    {
+      "case_id": "SSRF-105",
+      "category": "ssrf",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "holdout",
+      "path": "cases/ssrf/SSRF-105-vulnerable"
     },
     {
       "case_id": "TOKEN-001",

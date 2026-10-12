@@ -162,5 +162,21 @@ class TaintEvidenceTests(unittest.TestCase):
         self.assertFalse(findings, "业务方法 exchange 不应被当成 HTTP 客户端出站请求")
 
 
+class FullyQualifiedUrlRuleTest(unittest.TestCase):
+    """行级 SSRF 规则必须识别全限定写法 new java.net.URL(...)。
+
+    第二轮语料扩产（SSRF-103）发现的盲区：真实代码常写全限定类名，
+    原 `new\\s+URL` 正则完全漏掉这种形式。
+    """
+
+    def test_fully_qualified_url_is_detected(self):
+        from audit.runners.builtin import RULES
+        rule = next(r for r in RULES if r.rule_id == "JAL-SSRF-001")
+        self.assertTrue(rule.pattern.search("java.net.URL u = new java.net.URL(url);"))
+        self.assertTrue(rule.pattern.search("URL u = new URL(userUrl);"))
+        # 字面量目标仍不应命中（那是 taint 引擎按传播链处理的场景）
+        self.assertFalse(rule.pattern.search('URL u = new URL("https://a.example.com");'))
+
+
 if __name__ == "__main__":
     unittest.main()

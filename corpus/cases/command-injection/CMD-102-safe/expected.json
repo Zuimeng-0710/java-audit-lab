@@ -1,0 +1,20 @@
+{
+  "case_id": "CMD-102",
+  "title": "白名单命令映射，exec 不接触用户输入",
+  "category": "command-injection",
+  "expected": "safe",
+  "forbidden_rules": [
+    "JAL-CMD-001"
+  ],
+  "security_controls": [
+    "命令白名单映射"
+  ],
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "certain",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "用户输入只用于查表，exec 的参数是服务端常量。"
+}
