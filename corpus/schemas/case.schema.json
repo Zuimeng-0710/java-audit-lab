@@ -88,6 +88,10 @@
         "open-source"
       ]
     },
+    "derived_from": {
+      "type": "string",
+      "description": "source 为 desensitized 时注明真实素材出处（公开 CVE 分析、writeup 或开源项目）"
+    },
     "license": {
       "type": "string"
     },

@@ -93,7 +93,8 @@ def scan_case(case_dir: Path, scanner_names: tuple[str, ...]) -> list[dict]:
 
 
 def evaluate(corpus: Path, strict_locations: bool,
-             scanner_names: tuple[str, ...] = DEFAULT_SCANNERS) -> dict:
+             scanner_names: tuple[str, ...] = DEFAULT_SCANNERS,
+             splits: tuple[str, ...] | None = None) -> dict:
     manifest = json.loads((corpus / "manifest.json").read_text(encoding="utf-8"))
     assessable = assessable_rules(scanner_names)
     per_rule: dict[str, dict[str, int]] = {}
@@ -101,8 +102,13 @@ def evaluate(corpus: Path, strict_locations: bool,
     tp = fp = fn = tn = unscored = caveated = known = 0
     known_index = load_known_limitations(corpus)
     known_hits: list[tuple[str, str]] = []
+    evaluated_cases: set[str] = set()
+    splits = splits or ("train", "validation")
 
     for entry in manifest.get("cases") or []:
+        if entry.get("split", "train") not in splits:
+            continue
+        evaluated_cases.add(entry["case_id"])
         case_dir = corpus / entry["path"]
         expected = json.loads((case_dir / "expected.json").read_text(encoding="utf-8"))
         findings = scan_case(case_dir, scanner_names)
@@ -216,12 +222,13 @@ def evaluate(corpus: Path, strict_locations: bool,
         rule_stats.append({"rule_id": rule_id, **bucket, "precision": p, "recall": r, "f1": f})
     return {
         "corpus": corpus.relative_to(REPO).as_posix() if corpus.is_relative_to(REPO) else str(corpus),
-        "split": manifest.get("split", ""),
         "scanner": ",".join(scanner_names),
         "scanners": list(scanner_names),
         "totals": {"cases": len(case_results), "TP": tp, "FP": fp, "FN": fn, "TN": tn,
                    "UNSCORED": unscored, "FP_CAVEATED": caveated, "KNOWN": known},
-        "known_stale": sorted(set(known_index) - set(known_hits)),
+        # 只对本次实际评测过的案例做过期检查：没跑到的 split 里的条目不算过期
+        "known_stale": sorted(k for k in set(known_index) - set(known_hits) if k[0] in evaluated_cases),
+        "splits": list(splits),
         "precision": precision,
         "recall": recall,
         "f1": f1,
@@ -240,7 +247,7 @@ def print_report(result: dict) -> None:
     totals = result["totals"]
     print("== Java Audit Lab 语料评测 ==")
     print(f"语料: {totals['cases']} 案例（危险 {totals['TP'] + totals['FN']}"
-          f" / 安全 {totals['FP'] + totals['TN']}）  扫描器: {result['scanner']}  划分: {result['split']}")
+          f" / 安全 {totals['FP'] + totals['TN']}）  扫描器: {result['scanner']}  划分: {'+'.join(result['splits'])}")
     print()
     print("按规则统计：")
     print(f"{'规则':16}{'危险':>4}{'检出':>4}{'安全':>4}{'误报':>4}{'Precision':>11}{'Recall':>9}")
@@ -327,6 +334,9 @@ def main(argv: list[str]) -> int:
                         help="何时返回非零退出码（默认 any：出现 FP 或 FN 即失败）")
     parser.add_argument("--scanners", default=",".join(DEFAULT_SCANNERS),
                         help=f"启用的扫描器，逗号分隔。可选：{','.join(SCANNERS)}")
+    parser.add_argument("--split", default="train,validation",
+                        help="要评测的划分，逗号分隔：train/validation/holdout/all。"
+                             "默认 train,validation；holdout 只在发布前用 --split all 运行")
     args = parser.parse_args(argv[1:])
 
     names = tuple(n.strip() for n in args.scanners.split(",") if n.strip())
@@ -334,12 +344,20 @@ def main(argv: list[str]) -> int:
     if unknown:
         print(f"错误：未知扫描器 {unknown}，可选：{','.join(SCANNERS)}", file=sys.stderr)
         return 2
+    if args.split.strip() == "all":
+        splits = ("train", "validation", "holdout")
+    else:
+        splits = tuple(s.strip() for s in args.split.split(",") if s.strip())
+    bad_splits = [s for s in splits if s not in {"train", "validation", "holdout"}]
+    if bad_splits:
+        print(f"错误：未知划分 {bad_splits}，可选 train/validation/holdout/all", file=sys.stderr)
+        return 2
 
     corpus = Path(args.corpus).resolve()
     if not (corpus / "manifest.json").is_file():
         print(f"错误：找不到 {corpus / 'manifest.json'}", file=sys.stderr)
         return 2
-    result = evaluate(corpus, args.strict_locations, names)
+    result = evaluate(corpus, args.strict_locations, names, splits)
     print_report(result)
     if args.json_out:
         Path(args.json_out).write_text(

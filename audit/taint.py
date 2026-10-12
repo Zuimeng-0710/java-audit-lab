@@ -36,7 +36,12 @@ _METHOD_RE = re.compile(r"^\s{0,8}(?:@\w+.*)?\s*(?:public|protected|private|stat
 _IDENT_RE = re.compile(r"[A-Za-z_$][\w$]*")
 _SPRING_PARAM_RE = re.compile(
     r"@(?:RequestParam|PathVariable|RequestBody|ModelAttribute|RequestHeader|RequestPart)"
-    r"(?:\s*\([^)]*\))?\s+(?:final\s+)?[\w.<>,?\[\]]+\s+([A-Za-z_$][\w$]*)"
+    # 类型 = 标识符 + 可选泛型（<> 内允许逗号与空格）+ 可选数组维度。
+    # 不能用 [\w,<>\[\]] 之类扁平字符类：逗号会把参数分隔符当成泛型内部内容，
+    # 从而跨参数吞并（@RequestParam String a, HttpServletResponse b 会错捕 b）。
+    r"(?:\s*\([^)]*\))?\s+(?:final\s+)?"
+    r"[\w.]+(?:\s*<\s*[\w.<>,?\[\]\s]*\s*>)?(?:\s*\[\s*\])*"
+    r"\s+([A-Za-z_$][\w$]*)"
 )
 _MULTIPART_PARAM_RE = re.compile(r"\bMultipartFile\s+([A-Za-z_$][\w$]*)")
 _REQUEST_OBJECT_RE = re.compile(r"\bHttpServletRequest\s+([A-Za-z_$][\w$]*)")

@@ -1,0 +1,22 @@
+{
+  "case_id": "DESER-003",
+  "title": "JEP 290 ObjectInputFilter 白名单过滤",
+  "category": "deserialization",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "servlet"
+  ],
+  "evidence_level": "inferred",
+  "source": "desensitized",
+  "license": "MIT",
+  "notes": "过滤器在独立一行配置且只允许白名单类；行级与污点引擎都看不到跨行的过滤配置。",
+  "derived_from": "fabric-sdk-java GHSA-prf8-cf2x-rhx7 修复模式",
+  "forbidden_rules": [
+    "JAL-DESER-001",
+    "JAL-DESER-101"
+  ],
+  "security_controls": [
+    "ObjectInputFilter 类白名单（JEP 290）"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "case_id": "CMD-002",
+  "title": "用 InetAddress 探活替代执行系统命令",
+  "category": "command-injection",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "完全不需要执行系统命令，探活交给 InetAddress。",
+  "forbidden_rules": [
+    "JAL-CMD-001",
+    "JAL-CMD-101"
+  ],
+  "security_controls": [
+    "用标准库网络 API 替代命令执行"
+  ]
+}

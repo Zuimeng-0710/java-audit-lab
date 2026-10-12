@@ -1,0 +1,24 @@
+{
+  "case_id": "AUTH-001",
+  "title": "存储的明文口令直接 equals 比较",
+  "category": "plaintext-password",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "口令以明文存储且直接比较，泄露数据库即泄露全部口令。",
+  "expected_rules": [
+    "JAL-AUTH-001"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/auth/LegacyAuthController.java",
+      "line": 13,
+      "rule_id": "JAL-AUTH-001"
+    }
+  ]
+}

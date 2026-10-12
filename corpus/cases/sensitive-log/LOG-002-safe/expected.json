@@ -1,0 +1,21 @@
+{
+  "case_id": "LOG-002",
+  "title": "日志只记录用户标识与失败原因",
+  "category": "sensitive-log",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "slf4j"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "口令不出现在任何日志语句中。",
+  "forbidden_rules": [
+    "JAL-LOG-001"
+  ],
+  "security_controls": [
+    "日志仅记录用户标识与原因码"
+  ]
+}

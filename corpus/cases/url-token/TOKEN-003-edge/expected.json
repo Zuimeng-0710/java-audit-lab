@@ -1,0 +1,18 @@
+{
+  "case_id": "TOKEN-003",
+  "title": "OAuth state 参数本就应出现在请求中",
+  "category": "url-token",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "servlet"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "state 是 CSRF 防护参数而非凭据，出现在 URL 属于协议设计预期；规则按参数名匹配，不区分用途。",
+  "forbidden_rules": [
+    "JAL-TOKEN-001"
+  ]
+}

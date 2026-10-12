@@ -154,7 +154,7 @@ jal s -h
 | 稳定 | 多引擎归并 | SARIF、Semgrep、SpotBugs、Dependency-Check、CodeQL |
 | 稳定 | 复核档案 | 本地保存、导入导出、基线新增与已修复分类 |
 | 稳定 | 验证台账 | 任务卡、执行进度、成功判据、证据路径和误报归因 |
-| 试点 | 匿名评测语料 | 四类 vulnerable / safe / edge 试点样本 |
+| 试点 | 匿名评测语料 | 15 类 46 案例（含真实脱敏样本），train / validation / holdout 三分 |
 
 **状态说明：** 稳定＝已纳入常规测试 · 测试中＝功能可用但仍在完善 · 试点＝用于验证方向和评测流程
 
@@ -235,6 +235,50 @@ jal . -a -l beginner
 
 支持 `beginner`、`intermediate`、`advanced` 三个解释层级。
 
+## CI 集成与退出码
+
+### 退出码
+
+| 退出码 | 含义 | 常见触发条件 |
+|:---:|---|---|
+| `0` | 扫描完成，未达到失败阈值 | 正常执行；或 `fail_on: none` |
+| `1` | 达到失败阈值 | 基线新增发现中存在严重级别不低于 `--fail-on` 阈值的结果 |
+| `2` | 无法完成扫描 | 目标目录不存在、配置文件无效、未知扫描器、基线或复核档案无法读取 |
+
+`--fail-on` 只统计**基线新增**发现，已有发现不会让 CI 失败。阈值顺序为 `critical > high > medium > low`。
+
+### 机器可读摘要
+
+CI 需要稳定字段时，用 `--json-summary` 把摘要输出到 stdout，人类可读日志自动改到 stderr：
+
+```bash
+jal . --yes -f high --json-summary > summary.json
+```
+
+摘要结构（`schema_version: jal-summary/1`）：
+
+```json
+{
+  "schema_version": "jal-summary/1",
+  "status": "ok",
+  "tool": {"name": "java-audit-lab", "version": "1.9.0"},
+  "target": "/path/to/project",
+  "scanners": ["builtin", "secrets", "taint"],
+  "counts": {"findings": 12, "by_severity": {}, "by_scanner": {}},
+  "baseline": {"enabled": true, "new": 2, "existing": 9, "fixed": 1, "relocated": 0},
+  "playbook": {"total": 12, "completed": 5, "partial": 7},
+  "reports": {"json": "...", "sarif": "...", "html": "...", "markdown": "..."},
+  "fail_on": "high",
+  "exit_code": 1
+}
+```
+
+扫描失败时 stdout 仍会输出最小摘要：`{"schema_version": "jal-summary/1", "status": "error", "exit_code": 2}`。
+
+契约约定：同一 `schema_version` 内只新增字段，不改名、不改类型、不删字段。完整证据以 `report.json` 为准。
+
+Pull Request 自动增量审计的 Actions 示例见 [`examples/github-actions/pr-audit.yml`](examples/github-actions/pr-audit.yml)。
+
 ## 路线图
 
 路线图表示当前开发方向，不代表已经实现或承诺具体发布日期。
@@ -246,9 +290,9 @@ jal . -a -l beginner
 - [x] 为每条发现生成不含攻击载荷的验证任务卡
 - [x] 增加验证状态、执行人、尝试次数、成功判据和证据路径
 - [x] 增加误报归因、验证台账和动态结果统计
-- [ ] 将匿名语料扩展到更多规则、真实脱敏案例和独立 holdout 集
-- [ ] 为 CLI 增加稳定的机器可读摘要和更清晰的退出码文档
-- [ ] 增加 GitHub Actions 示例，让 Pull Request 自动执行增量审计
+- [x] 将匿名语料扩展到更多规则、真实脱敏案例和独立 holdout 集
+- [x] 为 CLI 增加稳定的机器可读摘要和更清晰的退出码文档
+- [x] 增加 GitHub Actions 示例，让 Pull Request 自动执行增量审计
 
 ### 中期：分析能力
 

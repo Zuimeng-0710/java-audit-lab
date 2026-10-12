@@ -1,0 +1,24 @@
+{
+  "case_id": "CMD-003",
+  "title": "exec 数组形式绕过行级规则但污点引擎可检出",
+  "category": "command-injection",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "数组形式不经过 shell，但 host 仍是用户输入，可注入 traceroute 参数（如 -m 1 -p 53）注入网关地址等。行级规则 JAL-CMD-001 依赖拼接符号或关键词，数组形式不命中；污点引擎覆盖该盲区。",
+  "expected_rules": [
+    "JAL-CMD-101"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/cmd/HostCheckController.java",
+      "line": 12,
+      "rule_id": "JAL-CMD-101"
+    }
+  ]
+}

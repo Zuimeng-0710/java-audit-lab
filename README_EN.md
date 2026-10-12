@@ -151,7 +151,7 @@ Each stage records available and missing evidence. Scanner output and human answ
 | Stable | Multi-engine consolidation | SARIF, Semgrep, SpotBugs, Dependency-Check, and CodeQL |
 | Stable | Review archive | Local storage, import/export, and baseline classification |
 | Stable | Verification ledger | Task cards, progress, success criteria, evidence paths, and false-positive attribution |
-| Pilot | Anonymous evaluation corpus | Four pilot families with vulnerable, safe, and edge cases |
+| Pilot | Anonymous evaluation corpus | 15 families, 46 cases (incl. redacted real-world patterns), train / validation / holdout splits |
 
 **Status definitions:** Stable = covered by routine tests · Beta = usable and still evolving · Pilot = validating the direction and evaluation workflow
 
@@ -234,6 +234,45 @@ jal . -a -l beginner
 
 Explanation levels are `beginner`, `intermediate`, and `advanced`.
 
+## CI integration and exit codes
+
+### Exit codes
+
+| Code | Meaning | Common triggers |
+|:---:|---|---|
+| `0` | Scan completed, threshold not reached | Normal run, or `fail_on: none` |
+| `1` | Threshold reached | A finding new to the baseline is at or above the `--fail-on` severity |
+| `2` | Scan could not complete | Missing target, invalid config, unknown scanner, unreadable baseline |
+
+`--fail-on` only counts findings that are **new to the baseline**. Pre-existing findings never fail CI. Severity order is `critical > high > medium > low`.
+
+### Machine-readable summary
+
+Use `--json-summary` to write the summary to stdout; human-readable logs move to stderr:
+
+```bash
+jal . --yes -f high --json-summary > summary.json
+```
+
+The summary uses `schema_version: jal-summary/1` and reports counts by severity and scanner, baseline movement (`new`, `existing`, `fixed`, `relocated`), verification progress, and report paths:
+
+```json
+{
+  "schema_version": "jal-summary/1",
+  "status": "ok",
+  "counts": {"findings": 12, "by_severity": {}, "by_scanner": {}},
+  "baseline": {"enabled": true, "new": 2, "existing": 9, "fixed": 1, "relocated": 0},
+  "fail_on": "high",
+  "exit_code": 1
+}
+```
+
+When a scan fails, stdout still emits a minimal summary: `{"schema_version": "jal-summary/1", "status": "error", "exit_code": 2}`.
+
+Contract: within one `schema_version` fields are only added, never renamed, retyped, or removed. `report.json` remains the authoritative evidence.
+
+A GitHub Actions example for pull-request differential review lives in [`examples/github-actions/pr-audit.yml`](examples/github-actions/pr-audit.yml).
+
 ## Roadmap
 
 The roadmap communicates current direction. It does not represent completed work or a promised release date.
@@ -245,9 +284,9 @@ The roadmap communicates current direction. It does not represent completed work
 - [x] Generate a review-only verification task card for every finding
 - [x] Track verification status, assignee, attempts, success criteria, and evidence paths
 - [x] Add false-positive attribution, a verification ledger, and live outcome metrics
-- [ ] Expand the anonymous corpus across more rules, redacted real cases, and an independent holdout split
-- [ ] Add a stable machine-readable CLI summary and document exit codes
-- [ ] Add a GitHub Actions example for pull-request differential review
+- [x] Expand the anonymous corpus across more rules, redacted real cases, and an independent holdout split
+- [x] Add a stable machine-readable CLI summary and document exit codes
+- [x] Add a GitHub Actions example for pull-request differential review
 
 ### Mid term: analysis
 

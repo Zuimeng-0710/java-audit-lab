@@ -1,0 +1,22 @@
+{
+  "case_id": "SPEL-002",
+  "title": "SimpleEvaluationContext 只读数据绑定",
+  "category": "spel",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "spel"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "安全上下文在后续行构建；行级与污点引擎都无法确认上下文类型。",
+  "forbidden_rules": [
+    "JAL-SPEL-001",
+    "JAL-EL-101"
+  ],
+  "security_controls": [
+    "SimpleEvaluationContext 禁用类型引用与任意方法调用"
+  ]
+}

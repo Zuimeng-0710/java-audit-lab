@@ -28,6 +28,76 @@
       "severity_note": "工具报错，但已给出「转义处理」与「字面量目标主机」双重反证",
       "reason": "同理：URL 主机写在字面量里，且 nonce 经过 URLEncoder 编码，但 @ 注入与路径注入仍能改写目标主机，工具不断言安全。",
       "plan": "保持现状，反证已足以让复核人在数秒内结案。"
+    },
+    {
+      "case_id": "XXE-002",
+      "rule_id": "JAL-XXE-001",
+      "severity_note": "工厂已完整加固，行级规则仍然报告 newInstance() 那一行",
+      "reason": "JAL-XXE-001 是行级规则：它只能看到 DocumentBuilderFactory.newInstance() 出现，无法看到后续行是否调用了 setFeature 禁用外部实体。",
+      "plan": "需要跨行的工厂加固状态追踪（factory 变量在方法内是否被 setFeature），属中期能力。"
+    },
+    {
+      "case_id": "XXE-003",
+      "rule_id": "JAL-XXE-001",
+      "severity_note": "解析对象是打包内静态资源，不含用户输入",
+      "reason": "行级规则不区分解析数据的来源：getResourceAsStream 的静态资源与 request.getInputStream 的用户输入在 newInstance() 这一行长得一样。",
+      "plan": "污点引擎扩展 XML sink 时应同时追踪输入来源。"
+    },
+    {
+      "case_id": "DESER-003",
+      "rule_id": "JAL-DESER-001",
+      "severity_note": "已配置 ObjectInputFilter 类白名单（JEP 290），行级规则仍报告 readObject()",
+      "reason": "setObjectInputFilter 在独立一行调用，行级规则无法把过滤器与 readObject 关联。",
+      "plan": "需要同方法内的过滤器状态追踪。"
+    },
+    {
+      "case_id": "DESER-003",
+      "rule_id": "JAL-DESER-101",
+      "severity_note": "同上，污点引擎也报告",
+      "reason": "污点引擎同样逐行分析，无法确认前一行已设置 ObjectInputFilter；该行已携带「类型白名单（反序列化）」反证信号。",
+      "plan": "反证已到位，保持现状由复核人结案。"
+    },
+    {
+      "case_id": "SPEL-002",
+      "rule_id": "JAL-SPEL-001",
+      "severity_note": "已改用 SimpleEvaluationContext 只读数据绑定，行级规则仍报告 parseExpression",
+      "reason": "安全上下文在独立一行构建，行级规则只看 parseExpression 的首参是不是变量。",
+      "plan": "需要方法内上下文类型追踪。"
+    },
+    {
+      "case_id": "SPEL-002",
+      "rule_id": "JAL-EL-101",
+      "severity_note": "污点引擎报告，但该行携带「表达式沙箱」反证",
+      "reason": "SimpleEvaluationContext 已在净化信号列表中，反证已生成；工具不断言安全，由复核人确认上下文确实只读。",
+      "plan": "保持现状。"
+    },
+    {
+      "case_id": "LDAP-002",
+      "rule_id": "JAL-LDAP-101",
+      "severity_note": "LdapEncoder.filterEncode 已转义全部过滤元字符，污点引擎仍报告",
+      "reason": "污点引擎把 filterEncode 视为赋值传播（返回值仍含原数据），转义只作为反证记录而不断言安全；与 URLEncoder 同一策略。",
+      "plan": "保持现状，反证已足够。"
+    },
+    {
+      "case_id": "UPLOAD-002",
+      "rule_id": "JAL-UPLOAD-101",
+      "severity_note": "存储名由 UUID 生成且扩展名固定，污点引擎仍报告 transferTo",
+      "reason": "MultipartFile 参数本身是输入源，transferTo 行只要出现文件对象就会命中；目标路径是否安全需要人工确认。",
+      "plan": "可考虑追踪 transferTo 首参的来源变量，属中期能力。"
+    },
+    {
+      "case_id": "LOG-003",
+      "rule_id": "JAL-LOG-001",
+      "severity_note": "token 已经过 mask 函数脱敏，行级规则仍因关键词报告",
+      "reason": "行级规则在日志语句中看到 token 关键词即报告，无法确认 mask 的脱敏实现。",
+      "plan": "可维护已知脱敏函数名单作为反证信号。"
+    },
+    {
+      "case_id": "CRYPTO-003",
+      "rule_id": "JAL-CRYPTO-001",
+      "severity_note": "MD5 仅用于非对抗性的文件完整性校验",
+      "reason": "行级规则不区分哈希用途：口令摘要与传输校验和都调用同一个 getInstance(\"MD5\")。",
+      "plan": "需要方法级别的用途推断（变量名/调用方），短期不做；教学上保留报告让学习者自行判断场景。"
     }
   ]
 }

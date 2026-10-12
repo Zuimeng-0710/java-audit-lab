@@ -1,0 +1,25 @@
+{
+  "case_id": "LOG-001",
+  "title": "登录失败日志记录明文口令",
+  "category": "sensitive-log",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "slf4j"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "明文口令进入日志采集管道后会长期留存。",
+  "expected_rules": [
+    "JAL-LOG-001"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/log/LoginAuditController.java",
+      "line": 18,
+      "rule_id": "JAL-LOG-001"
+    }
+  ]
+}

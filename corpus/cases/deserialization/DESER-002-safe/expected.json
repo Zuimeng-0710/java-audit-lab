@@ -1,0 +1,22 @@
+{
+  "case_id": "DESER-002",
+  "title": "改用 Jackson DTO 反序列化替代 Java 原生序列化",
+  "category": "deserialization",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "jackson"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "结构化 DTO 绑定，不触碰 Java 原生反序列化入口。",
+  "forbidden_rules": [
+    "JAL-DESER-001",
+    "JAL-DESER-101"
+  ],
+  "security_controls": [
+    "JSON DTO 反序列化替代 ObjectInputStream"
+  ]
+}

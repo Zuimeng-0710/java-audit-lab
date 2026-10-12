@@ -1,0 +1,26 @@
+{
+  "case_id": "LDAP-003",
+  "title": "长度检查不足以阻止 LDAP 注入",
+  "category": "ldap-injection",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "jndi"
+  ],
+  "evidence_level": "inferred",
+  "source": "desensitized",
+  "license": "MIT",
+  "notes": "长度检查只挡住单字符通配，多字符元字符序列（如 admin)(!(&(1=0）依然可注入（真实实验模式）。",
+  "derived_from": "skf-labs LDAP harder 实验模式",
+  "expected_rules": [
+    "JAL-LDAP-101"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/ldap/LoginController.java",
+      "line": 23,
+      "rule_id": "JAL-LDAP-101"
+    }
+  ]
+}

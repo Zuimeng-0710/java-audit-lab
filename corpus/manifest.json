@@ -1,58 +1,144 @@
 {
-  "version": "0.1",
-  "split": "train",
-  "generated": "2026-09-29",
+  "version": "0.2",
+  "generated": "2026-10-12",
   "scanners": [
-    "builtin"
+    "builtin",
+    "taint",
+    "secrets"
   ],
+  "split_policy": {
+    "train": "规则开发与调优可以查看；edge 样本集中在 train",
+    "validation": "调整规则时使用，vulnerable + safe 成对出现",
+    "holdout": "发布前才运行，平时不针对它修改规则",
+    "ratio_note": "25/11/10，接近 60/20/20；holdout 与 validation 均同时含危险与安全样本"
+  },
   "cases": [
     {
-      "case_id": "SQL-001",
-      "category": "sql-injection",
+      "case_id": "CMD-001",
+      "category": "command-injection",
       "expected": "vulnerable",
       "variant": "vulnerable",
-      "path": "cases/sql-injection/SQL-001-vulnerable"
+      "split": "validation",
+      "path": "cases/command-injection/CMD-001-vulnerable"
     },
     {
-      "case_id": "SQL-002",
-      "category": "sql-injection",
+      "case_id": "CMD-002",
+      "category": "command-injection",
       "expected": "safe",
       "variant": "safe",
-      "path": "cases/sql-injection/SQL-002-safe"
+      "split": "validation",
+      "path": "cases/command-injection/CMD-002-safe"
     },
     {
-      "case_id": "SQL-003",
-      "category": "sql-injection",
-      "expected": "safe",
+      "case_id": "CMD-003",
+      "category": "command-injection",
+      "expected": "vulnerable",
       "variant": "edge",
-      "path": "cases/sql-injection/SQL-003-edge"
+      "split": "train",
+      "path": "cases/command-injection/CMD-003-edge"
     },
     {
-      "case_id": "SSRF-001",
-      "category": "ssrf",
+      "case_id": "DESER-001",
+      "category": "deserialization",
       "expected": "vulnerable",
       "variant": "vulnerable",
-      "path": "cases/ssrf/SSRF-001-vulnerable"
+      "split": "train",
+      "path": "cases/deserialization/DESER-001-vulnerable"
     },
     {
-      "case_id": "SSRF-002",
-      "category": "ssrf",
+      "case_id": "DESER-002",
+      "category": "deserialization",
       "expected": "safe",
       "variant": "safe",
-      "path": "cases/ssrf/SSRF-002-safe"
+      "split": "train",
+      "path": "cases/deserialization/DESER-002-safe"
     },
     {
-      "case_id": "SSRF-003",
-      "category": "ssrf",
+      "case_id": "DESER-003",
+      "category": "deserialization",
       "expected": "safe",
       "variant": "edge",
-      "path": "cases/ssrf/SSRF-003-edge"
+      "split": "train",
+      "path": "cases/deserialization/DESER-003-edge"
+    },
+    {
+      "case_id": "UPLOAD-001",
+      "category": "file-upload",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "validation",
+      "path": "cases/file-upload/UPLOAD-001-vulnerable"
+    },
+    {
+      "case_id": "UPLOAD-002",
+      "category": "file-upload",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "validation",
+      "path": "cases/file-upload/UPLOAD-002-safe"
+    },
+    {
+      "case_id": "UPLOAD-003",
+      "category": "file-upload",
+      "expected": "vulnerable",
+      "variant": "edge",
+      "split": "train",
+      "path": "cases/file-upload/UPLOAD-003-edge"
+    },
+    {
+      "case_id": "LDAP-001",
+      "category": "ldap-injection",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "holdout",
+      "path": "cases/ldap-injection/LDAP-001-vulnerable"
+    },
+    {
+      "case_id": "LDAP-002",
+      "category": "ldap-injection",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "holdout",
+      "path": "cases/ldap-injection/LDAP-002-safe"
+    },
+    {
+      "case_id": "LDAP-003",
+      "category": "ldap-injection",
+      "expected": "vulnerable",
+      "variant": "edge",
+      "split": "train",
+      "path": "cases/ldap-injection/LDAP-003-edge"
+    },
+    {
+      "case_id": "REDIR-001",
+      "category": "open-redirect",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "train",
+      "path": "cases/open-redirect/REDIR-001-vulnerable"
+    },
+    {
+      "case_id": "REDIR-002",
+      "category": "open-redirect",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "train",
+      "path": "cases/open-redirect/REDIR-002-safe"
+    },
+    {
+      "case_id": "REDIR-003",
+      "category": "open-redirect",
+      "expected": "vulnerable",
+      "variant": "edge",
+      "split": "train",
+      "path": "cases/open-redirect/REDIR-003-edge"
     },
     {
       "case_id": "PATH-001",
       "category": "path-traversal",
       "expected": "vulnerable",
       "variant": "vulnerable",
+      "split": "holdout",
       "path": "cases/path-traversal/PATH-001-vulnerable"
     },
     {
@@ -60,6 +146,7 @@
       "category": "path-traversal",
       "expected": "safe",
       "variant": "safe",
+      "split": "holdout",
       "path": "cases/path-traversal/PATH-002-safe"
     },
     {
@@ -67,13 +154,39 @@
       "category": "path-traversal",
       "expected": "safe",
       "variant": "edge",
+      "split": "train",
       "path": "cases/path-traversal/PATH-003-edge"
+    },
+    {
+      "case_id": "AUTH-001",
+      "category": "plaintext-password",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "train",
+      "path": "cases/plaintext-password/AUTH-001-vulnerable"
+    },
+    {
+      "case_id": "AUTH-002",
+      "category": "plaintext-password",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "train",
+      "path": "cases/plaintext-password/AUTH-002-safe"
+    },
+    {
+      "case_id": "AUTH-003",
+      "category": "plaintext-password",
+      "expected": "safe",
+      "variant": "edge",
+      "split": "train",
+      "path": "cases/plaintext-password/AUTH-003-edge"
     },
     {
       "case_id": "SECRET-001",
       "category": "secrets",
       "expected": "vulnerable",
       "variant": "vulnerable",
+      "split": "train",
       "path": "cases/secrets/SECRET-001-vulnerable"
     },
     {
@@ -81,6 +194,7 @@
       "category": "secrets",
       "expected": "safe",
       "variant": "safe",
+      "split": "train",
       "path": "cases/secrets/SECRET-002-safe"
     },
     {
@@ -88,7 +202,184 @@
       "category": "secrets",
       "expected": "safe",
       "variant": "edge",
+      "split": "train",
       "path": "cases/secrets/SECRET-003-edge"
+    },
+    {
+      "case_id": "LOG-001",
+      "category": "sensitive-log",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "holdout",
+      "path": "cases/sensitive-log/LOG-001-vulnerable"
+    },
+    {
+      "case_id": "LOG-002",
+      "category": "sensitive-log",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "holdout",
+      "path": "cases/sensitive-log/LOG-002-safe"
+    },
+    {
+      "case_id": "LOG-003",
+      "category": "sensitive-log",
+      "expected": "safe",
+      "variant": "edge",
+      "split": "train",
+      "path": "cases/sensitive-log/LOG-003-edge"
+    },
+    {
+      "case_id": "SPEL-001",
+      "category": "spel",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "validation",
+      "path": "cases/spel/SPEL-001-vulnerable"
+    },
+    {
+      "case_id": "SPEL-002",
+      "category": "spel",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "validation",
+      "path": "cases/spel/SPEL-002-safe"
+    },
+    {
+      "case_id": "SPEL-003",
+      "category": "spel",
+      "expected": "vulnerable",
+      "variant": "edge",
+      "split": "train",
+      "path": "cases/spel/SPEL-003-edge"
+    },
+    {
+      "case_id": "SQL-001",
+      "category": "sql-injection",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "train",
+      "path": "cases/sql-injection/SQL-001-vulnerable"
+    },
+    {
+      "case_id": "SQL-002",
+      "category": "sql-injection",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "train",
+      "path": "cases/sql-injection/SQL-002-safe"
+    },
+    {
+      "case_id": "SQL-003",
+      "category": "sql-injection",
+      "expected": "safe",
+      "variant": "edge",
+      "split": "train",
+      "path": "cases/sql-injection/SQL-003-edge"
+    },
+    {
+      "case_id": "SSRF-001",
+      "category": "ssrf",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "validation",
+      "path": "cases/ssrf/SSRF-001-vulnerable"
+    },
+    {
+      "case_id": "SSRF-004",
+      "category": "ssrf",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "validation",
+      "path": "cases/ssrf/SSRF-004-vulnerable"
+    },
+    {
+      "case_id": "SSRF-002",
+      "category": "ssrf",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "validation",
+      "path": "cases/ssrf/SSRF-002-safe"
+    },
+    {
+      "case_id": "SSRF-003",
+      "category": "ssrf",
+      "expected": "safe",
+      "variant": "edge",
+      "split": "train",
+      "path": "cases/ssrf/SSRF-003-edge"
+    },
+    {
+      "case_id": "TOKEN-001",
+      "category": "url-token",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "validation",
+      "path": "cases/url-token/TOKEN-001-vulnerable"
+    },
+    {
+      "case_id": "TOKEN-002",
+      "category": "url-token",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "validation",
+      "path": "cases/url-token/TOKEN-002-safe"
+    },
+    {
+      "case_id": "TOKEN-003",
+      "category": "url-token",
+      "expected": "safe",
+      "variant": "edge",
+      "split": "train",
+      "path": "cases/url-token/TOKEN-003-edge"
+    },
+    {
+      "case_id": "CRYPTO-001",
+      "category": "weak-hash",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "holdout",
+      "path": "cases/weak-hash/CRYPTO-001-vulnerable"
+    },
+    {
+      "case_id": "CRYPTO-002",
+      "category": "weak-hash",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "holdout",
+      "path": "cases/weak-hash/CRYPTO-002-safe"
+    },
+    {
+      "case_id": "CRYPTO-003",
+      "category": "weak-hash",
+      "expected": "safe",
+      "variant": "edge",
+      "split": "train",
+      "path": "cases/weak-hash/CRYPTO-003-edge"
+    },
+    {
+      "case_id": "XXE-001",
+      "category": "xxe",
+      "expected": "vulnerable",
+      "variant": "vulnerable",
+      "split": "holdout",
+      "path": "cases/xxe/XXE-001-vulnerable"
+    },
+    {
+      "case_id": "XXE-002",
+      "category": "xxe",
+      "expected": "safe",
+      "variant": "safe",
+      "split": "holdout",
+      "path": "cases/xxe/XXE-002-safe"
+    },
+    {
+      "case_id": "XXE-003",
+      "category": "xxe",
+      "expected": "safe",
+      "variant": "edge",
+      "split": "train",
+      "path": "cases/xxe/XXE-003-edge"
     }
   ]
 }

@@ -1,0 +1,26 @@
+{
+  "case_id": "DESER-001",
+  "title": "请求体直接进入 ObjectInputStream",
+  "category": "deserialization",
+  "expected": "vulnerable",
+  "scope": "production",
+  "frameworks": [
+    "servlet"
+  ],
+  "evidence_level": "inferred",
+  "source": "desensitized",
+  "license": "MIT",
+  "notes": "instanceof 检查发生在 readObject() 之后，利用链在检查前已触发（真实 CTF 题目模式）。",
+  "derived_from": "山河 CTF Web 题公开 writeup（检查滞后模式）",
+  "expected_rules": [
+    "JAL-DESER-001",
+    "JAL-DESER-101"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/deser/NoteSyncController.java",
+      "line": 15,
+      "rule_id": "JAL-DESER-001"
+    }
+  ]
+}

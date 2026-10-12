@@ -1,0 +1,20 @@
+{
+  "case_id": "UPLOAD-002",
+  "title": "UUID 存储名加固定扩展名",
+  "category": "file-upload",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "存储名与扩展名均由服务端决定；污点引擎把 MultipartFile 本身视为输入源，落盘行为需要人工确认目标路径。",
+  "forbidden_rules": [
+    "JAL-UPLOAD-101"
+  ],
+  "security_controls": [
+    "服务端生成存储名与固定扩展"
+  ]
+}

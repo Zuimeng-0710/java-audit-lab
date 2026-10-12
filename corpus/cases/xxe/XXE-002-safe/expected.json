@@ -1,0 +1,21 @@
+{
+  "case_id": "XXE-002",
+  "title": "解析前对工厂做完整加固配置",
+  "category": "xxe",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "jaxp"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "加固配置在 newInstance() 之后的行完成，行级规则只能看到工厂创建这一行。",
+  "forbidden_rules": [
+    "JAL-XXE-001"
+  ],
+  "security_controls": [
+    "禁用 DOCTYPE、外部通用与参数实体、XInclude"
+  ]
+}

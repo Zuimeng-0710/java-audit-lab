@@ -1,0 +1,20 @@
+{
+  "case_id": "AUTH-003",
+  "title": "常量时间比较摘要值",
+  "category": "plaintext-password",
+  "expected": "safe",
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "inferred",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "MessageDigest.isEqual 是常量时间比较，不匹配 AUTH 规则的 equals 形态。",
+  "forbidden_rules": [
+    "JAL-AUTH-001"
+  ],
+  "security_controls": [
+    "先摘要再常量时间比较"
+  ]
+}

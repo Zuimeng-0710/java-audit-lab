@@ -226,6 +226,9 @@ def main(argv: list[str]) -> int:
         if not case_dir.is_relative_to(corpus):
             errors.append(f"manifest: 案例路径越过语料根目录：{raw_path}")
             continue
+        split = entry.get("split")
+        if split not in {"train", "validation", "holdout"}:
+            errors.append(f"manifest: {case_id} 的 split 必须是 train/validation/holdout，当前为 {split!r}")
         seen_dirs.append(case_dir)
         if not case_dir.is_dir():
             errors.append(f"manifest: 案例目录不存在 {entry.get('path')}")
