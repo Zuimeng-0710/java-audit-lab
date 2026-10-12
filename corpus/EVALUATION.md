@@ -48,11 +48,11 @@ TP 7 · FP 0 · FN 0 · TN 5 · 已登记边界 1 案例
 
 1. **67.7% 才是 train+validation 上三个引擎合计的真实 Precision**（把 10 例已登记
    边界算回误报）。这些误报几乎全部来自「跨行才能确认的安全措施」：工厂加固配置、
-   ObjectInputFilter、SimpleEvaluationContext、filterEncode、UUID 存储名、mask 脱敏、
+   ObjectInputFilter、SimpleEvaluationContext、UUID 存储名、mask 脱敏、
    MD5 校验和用途、SSRF 协议前置校验。这是行级规则与逐行污点引擎的结构性边界，
    不是实现疏漏。
-2. holdout 上的 87.5% 同理：唯一误报是 MD5 校验和（CRYPTO-003）。
-3. **每条边界都必须登记 reason 与 plan**（known-limitations.json，当前 14 条），
+2. holdout 上的 87.5% 同理：唯一已登记边界是 XXE-002（行级规则看不到后续行的 setFeature 加固）。
+3. **每条边界都必须登记 reason 与 plan**（known-limitations.json，当前 13 条），
    每次评测原样公示；条目不再复现会被标记过期，有专门测试防止清单腐烂。
 4. 门禁口径的 100% 只说明「已登记边界之外没有新增误报、危险样本无漏报」，
    是回归门禁，**不是准确率声明**。

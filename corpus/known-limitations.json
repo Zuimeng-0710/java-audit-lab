@@ -72,13 +72,6 @@
       "plan": "保持现状。"
     },
     {
-      "case_id": "LDAP-002",
-      "rule_id": "JAL-LDAP-101",
-      "severity_note": "LdapEncoder.filterEncode 已转义全部过滤元字符，污点引擎仍报告",
-      "reason": "污点引擎把 filterEncode 视为赋值传播（返回值仍含原数据），转义只作为反证记录而不断言安全；与 URLEncoder 同一策略。",
-      "plan": "保持现状，反证已足够。"
-    },
-    {
       "case_id": "UPLOAD-002",
       "rule_id": "JAL-UPLOAD-101",
       "severity_note": "存储名由 UUID 生成且扩展名固定，污点引擎仍报告 transferTo",
