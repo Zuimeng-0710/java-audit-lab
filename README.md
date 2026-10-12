@@ -75,7 +75,7 @@ jal . -O
 jal .
 ```
 
-旧命令 `java-audit scan .` 继续兼容。已发布的 v1.8.0 wheel 可继续使用旧命令；`jal` 是 v1.9.0 源码版的推荐入口。
+旧命令 `java-audit scan .` 继续兼容。已发布的 v1.8.0 wheel 可继续使用旧命令；`jal` 是 v1.9.0 起源码版的推荐入口。
 
 ### 常用短命令
 
@@ -261,7 +261,7 @@ jal . --yes -f high --json-summary > summary.json
 {
   "schema_version": "jal-summary/1",
   "status": "ok",
-  "tool": {"name": "java-audit-lab", "version": "1.9.0"},
+  "tool": {"name": "java-audit-lab", "version": "2.0.0"},
   "target": "/path/to/project",
   "scanners": ["builtin", "secrets", "taint"],
   "counts": {"findings": 12, "by_severity": {}, "by_scanner": {}},

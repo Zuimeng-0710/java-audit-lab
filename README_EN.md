@@ -77,7 +77,7 @@ jal . -O
 jal .
 ```
 
-The legacy `java-audit scan .` command remains supported. The published v1.8.0 wheel continues to use the legacy command; `jal` is the recommended entry point for the v1.9.0 source tree.
+The legacy `java-audit scan .` command remains supported. The published v1.8.0 wheel continues to use the legacy command; `jal` is the recommended entry point since v1.9.0.
 
 ### Short command reference
 
