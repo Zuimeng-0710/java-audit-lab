@@ -3,7 +3,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from audit.authz import collect_authorization
-from audit.project import source_scope
+from audit.project import collect_inventory, iter_java_files, source_scope
 from audit.runners.builtin import BuiltinRunner
 from audit.runners.secrets import SecretsRunner
 
@@ -62,6 +62,21 @@ class Release180Tests(unittest.TestCase):
         self.assertEqual(source_scope("src/main/java/App.java"), "production")
         self.assertEqual(source_scope("src/test/java/AppTest.java"), "test")
         self.assertEqual(source_scope("examples/demo/App.java"), "example")
+        self.assertEqual(source_scope("corpus/cases/SQL-001/App.java"), "fixture")
+        self.assertEqual(source_scope("audit/benchmarks/vulnerable/Sample.java"), "fixture")
+
+    def test_virtualenv_and_temp_directories_are_ignored(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "src").mkdir()
+            (root / "src" / "App.java").write_text("class App {}", encoding="utf-8")
+            for directory in (".venv", "venv", ".m2-test", "tmp", "__pycache__"):
+                target = root / directory
+                target.mkdir()
+                (target / "Ignored.java").write_text("class Ignored {}", encoding="utf-8")
+                (target / "ignored.json").write_text("{}", encoding="utf-8")
+            self.assertEqual([path.name for path in iter_java_files(root)], ["App.java"])
+            self.assertEqual(collect_inventory(root)["total_files"], 1)
 
 
 if __name__ == "__main__":

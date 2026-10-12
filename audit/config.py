@@ -32,8 +32,14 @@ def load_config(path: Path | None) -> dict[str, Any]:
         raise ValueError("配置文件顶层必须是对象")
     result = dict(DEFAULTS)
     result.update(loaded)
+    # YAML commonly treats the bare scalar `none` as null. For fail_on it means
+    # the documented "do not fail on findings" policy, not Python None.
+    if result.get("fail_on") is None:
+        result["fail_on"] = "none"
     if not isinstance(result["scanners"], list):
         raise ValueError("scanners 必须是列表")
+    if result["fail_on"] not in {"none", "critical", "high", "medium", "low"}:
+        raise ValueError("fail_on 必须是 none、critical、high、medium 或 low")
     if not isinstance(result["exclude_paths"], list):
         raise ValueError("exclude_paths 必须是列表")
     if not isinstance(result["extra_rules"], list):

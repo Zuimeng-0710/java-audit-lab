@@ -7,6 +7,7 @@ build/
 target/
 audit-report/
 output/
+tmp/
 .idea/
 .vscode/
 .java-audit-cache/
