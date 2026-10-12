@@ -35,12 +35,18 @@ def _scan_config(path: Path, root: Path) -> list[Finding]:
         return []
     relative = path.relative_to(root).as_posix()
     findings: list[Finding] = []
+    # 位移容忍身份（issue #6）：不含行号，格式化插入不会产生基线噪声；
+    # 同一文件里重复出现的同名键靠序号区分。
+    occurrences: dict[tuple[str, str], int] = {}
     for number, line in enumerate(lines, 1):
         match = _ASSIGNMENT.match(line)
         if not match or not _SENSITIVE_KEY.search(match.group("key")) or not _looks_literal(match.group("value")):
             continue
         key = match.group("key")
-        identity = f"JAL-CONFIG-SECRET-001:{relative}:{number}:{key.lower()}"
+        key_id = key.lower()
+        index = occurrences.get((relative, key_id), 0)
+        occurrences[(relative, key_id)] = index + 1
+        identity = f"JAL-CONFIG-SECRET-001:{relative}:{key_id}:{index}"
         findings.append(Finding(
             rule_id="JAL-CONFIG-SECRET-001",
             title="配置文件中疑似明文凭据",

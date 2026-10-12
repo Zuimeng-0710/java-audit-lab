@@ -20,9 +20,12 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
+from audit.frameworks import SINKS  # noqa: E402
 from audit.runners.builtin import RULES  # noqa: E402
 
 RULE_BY_ID = {rule.rule_id: rule for rule in RULES}
+# 评测器默认接入的全部扫描器的规则 ID：builtin + taint + secrets
+ASSESSABLE_IDS = set(RULE_BY_ID) | {sink.rule_id for sink in SINKS} | {"JAL-CONFIG-SECRET-001"}
 CASE_ID_RE = re.compile(r"^[A-Z]+-\d{3}$")
 VARIANTS = {"vulnerable", "safe", "edge"}
 
@@ -121,9 +124,8 @@ def check_case(case_dir: Path, entry: dict, schema: dict, errors: list[str], war
     # 4. 规则 ID 有效性
     rule_ids = list(expected.get("expected_rules") or []) + list(expected.get("forbidden_rules") or [])
     for rule_id in rule_ids:
-        if rule_id not in RULE_BY_ID:
-            # taint/frameworks 引擎的规则不算错误，但提醒当前评测器未覆盖
-            warnings.append(f"{tag}: 规则 {rule_id} 不在 builtin 规则集中（评测时不会被检查）")
+        if rule_id not in ASSESSABLE_IDS:
+            warnings.append(f"{tag}: 规则 {rule_id} 不在任何已接入扫描器的规则集中（评测时不会被检查）")
     # 5. 危险样本：行号漂移检查
     if expected["expected"] == "vulnerable":
         builtin_rules = [r for r in expected.get("expected_rules") or [] if r in RULE_BY_ID]

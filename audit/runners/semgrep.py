@@ -27,12 +27,14 @@ class SemgrepRunner:
                 message = (completed.stderr or completed.stdout or "Semgrep 执行失败")[-1000:]
                 return RunnerResult(self.name, True, False, [], message, command)
             payload = json.loads(output.read_text(encoding="utf-8"))
-            findings = [self._convert(item, root) for item in payload.get("results", [])]
+            # 位移容忍身份（issue #6）需要跨结果的同文本出现序号
+            occurrences: dict[tuple[str, str, str], int] = {}
+            findings = [self._convert(item, root, occurrences) for item in payload.get("results", [])]
             return RunnerResult(self.name, True, True, findings, f"Semgrep 完成，共 {len(findings)} 条。", command)
         except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:
             return RunnerResult(self.name, True, False, [], f"Semgrep 解析失败：{exc}", command)
 
-    def _convert(self, item: dict, root: Path) -> Finding:
+    def _convert(self, item: dict, root: Path, occurrences: dict[tuple[str, str, str], int] | None = None) -> Finding:
         extra = item.get("extra", {})
         metadata = extra.get("metadata", {}) or {}
         severity_map = {"ERROR": "high", "WARNING": "medium", "INFO": "low"}
@@ -43,7 +45,14 @@ class SemgrepRunner:
         rule_id = item.get("check_id", "semgrep-unknown")
         path = normalize_path(item.get("path", "unknown"), root)
         line = int(location.get("line", 1))
-        identity = f"{rule_id}:{path}:{line}"
+        # 位移容忍身份（issue #6）：规则 + 路径 + 空白归一化命中行 + 出现序号，不含绝对行号
+        normalized = " ".join(((extra.get("lines") or "")).split())
+        if occurrences is None:
+            occurrences = {}
+        occ_key = (rule_id, path, normalized)
+        index = occurrences.get(occ_key, 0)
+        occurrences[occ_key] = index + 1
+        identity = f"{rule_id}:{path}:{normalized}:{index}"
         message = extra.get("message", "Semgrep 规则匹配")
         import re as _re
         cwe_match = _re.search(r"CWE[-/ ]?(\d+)", str(cwe_value), _re.I)

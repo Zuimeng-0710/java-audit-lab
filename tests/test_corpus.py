@@ -46,8 +46,26 @@ class CorpusTests(unittest.TestCase):
 
     def test_pilot_corpus_passes_strict_evaluation(self):
         result = evaluator.evaluate(CORPUS, strict_locations=True)
-        self.assertEqual(result["totals"], {"cases": 12, "TP": 4, "FP": 0, "FN": 0, "TN": 8, "UNSCORED": 0})
+        # 已登记边界不计入门禁误报，但必须单独计数并压低诚实口径的 Precision
+        self.assertEqual(result["totals"], {"cases": 12, "TP": 4, "FP": 0, "FN": 0, "TN": 5,
+                                            "UNSCORED": 0, "FP_CAVEATED": 0, "KNOWN": 3})
+        self.assertEqual(len(result["known_limitations"]), 3)
+        self.assertLess(result["precision_all"], 1.0,
+                        "把已登记边界算回误报后 Precision 必须低于 100%，否则登记机制在撒谎")
         self.assertFalse(evaluator.should_fail(result, "any", True))
+
+    def test_known_limitation_must_reproduce(self):
+        # 登记过的边界一旦不再复现，评测器必须提示过期，防止清单腐烂成免检白名单
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            shutil.copytree(CORPUS, root / "corpus")
+            corpus = root / "corpus"
+            payload = json.loads((corpus / "known-limitations.json").read_text(encoding="utf-8"))
+            payload["entries"].append({"case_id": "SQL-003", "rule_id": "JAL-CMD-101",
+                                       "reason": "测试用虚构条目", "plan": "无"})
+            (corpus / "known-limitations.json").write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            result = evaluator.evaluate(corpus, strict_locations=False)
+        self.assertIn(("SQL-003", "JAL-CMD-101"), result["known_stale"])
 
     def test_every_expected_rule_is_required(self):
         _, root, case = self._single_case(CORPUS / "cases" / "sql-injection" / "SQL-001-vulnerable")

@@ -40,6 +40,20 @@ _SPRING_PARAM_RE = re.compile(
 )
 _MULTIPART_PARAM_RE = re.compile(r"\bMultipartFile\s+([A-Za-z_$][\w$]*)")
 _REQUEST_OBJECT_RE = re.compile(r"\bHttpServletRequest\s+([A-Za-z_$][\w$]*)")
+# 字面量目标主机：引号内以 scheme:// 开头且 authority 非空、未被 + 拼接打断。
+# 例："https://status.example.com/api?nonce=" 命中；"http://" + host 不命中。
+_LITERAL_HOST_URL = re.compile(r'"(?:https?|ftp)://[^/"\s+]+')
+_STRING_LITERAL_RE = re.compile(r'"(?:[^"\\\n]|\\.)*"|\'(?:[^\'\\\n]|\\.)*\'')
+_LINE_COMMENT_RE = re.compile(r"//.*$")
+
+
+def strip_literals(line: str) -> str:
+    """去掉字符串/字符字面量内容与行注释，只留下真正的代码。
+
+    变量名出现在引号里（如 "?nonce=" 中的 nonce）不构成引用；
+    不先做这一步，会把字面量里的标识符误判为变量使用。
+    """
+    return _LINE_COMMENT_RE.sub("", _STRING_LITERAL_RE.sub('""', line))
 
 
 def split_methods(lines: list[str]) -> list[tuple[int, int, str]]:
@@ -72,11 +86,12 @@ def split_methods(lines: list[str]) -> list[tuple[int, int, str]]:
     return blocks
 
 
-def analyze_method(body: list[str], base_line: int, rel_path: str, handler: str) -> list[Finding]:
+def analyze_method(body: list[str], base_line: int, rel_path: str, handler: str, occurrences: dict | None = None) -> list[Finding]:
     """在单个方法体内做污点追踪，返回发现列表。
 
     净化信号不清除污点，而是记为该发现的**反证**（evidence_against）——
     净化是否充分必须人工判断，工具不能替用户宣布安全。
+    occurrences：跨方法共享的位移容忍身份计数器（issue #6），由 _analyze_file 持有。
     """
     findings: list[Finding] = []
     tainted: dict[str, dict] = {}          # 变量名 -> 来源信息
@@ -128,13 +143,16 @@ def analyze_method(body: list[str], base_line: int, rel_path: str, handler: str)
         assign = _ASSIGN_RE.match(line)
         if assign:
             var, rhs = assign.group(1), assign.group(2)
-            hits = [name for name in tainted if re.search(rf"\b{re.escape(name)}\b", rhs)]
+            rhs_code = strip_literals(rhs)
+            hits = [name for name in tainted if re.search(rf"\b{re.escape(name)}\b", rhs_code)]
             if hits and var != hits[0]:
                 origin = tainted[hits[0]]
                 tainted[var] = {"line": line_no, "label": f"{var} 由 {hits[0]} 传播而来",
-                                "source": origin["source"], "via": origin["line"]}
-                if hits[0] in sanitized:
-                    sanitized[var] = list(sanitized[hits[0]])
+                                "source": origin["source"], "via": origin["line"], "text": rhs,
+                                "literal_host": bool(_LITERAL_HOST_URL.search(rhs))
+                                                or bool(origin.get("literal_host"))}
+            if hits and hits[0] in sanitized:
+                sanitized[var] = list(sanitized[hits[0]])
 
         # 3) 净化：记录反证，不从污点集合里移除
         for var in list(tainted):
@@ -150,10 +168,14 @@ def analyze_method(body: list[str], base_line: int, rel_path: str, handler: str)
         for sink in SINKS:
             if not sink.pattern.search(line):
                 continue
-            arg_vars = [name for name in tainted if re.search(rf"\b{re.escape(name)}\b", line)]
+            code = strip_literals(line)
+            arg_vars = [name for name in tainted if re.search(rf"\b{re.escape(name)}\b", code)]
             if not arg_vars:
                 continue
-            var = arg_vars[0]
+            # 同一行可能同时提到多个污点变量：取行内最后出现的那个，
+            # 它通常是真正进入调用的实参（"...".concat(x).getBytes() 里的 x）。
+            arg_vars.sort(key=lambda n: code.rfind(n))
+            var = arg_vars[-1]
             info = tainted[var]
             trace = [
                 {"kind": "source-candidate", "path": rel_path, "line": info["line"], "label": info["label"]},
@@ -162,8 +184,23 @@ def analyze_method(body: list[str], base_line: int, rel_path: str, handler: str)
             if info.get("via"):
                 trace.insert(1, {"kind": "propagation-candidate", "path": rel_path, "line": info["via"],
                                  "label": f"{var} 在方法内的文本传播候选"})
-            against = sanitized.get(var) or []
-            fingerprint = hashlib.sha256(f"{sink.rule_id}:{rel_path}:{line_no}:{var}".encode()).hexdigest()[:16]
+            against = list(sanitized.get(var) or [])
+            # SSRF 的可利用前提是「目标主机可控」。行内任一污点变量由字面量 URL
+            # 拼接而来时（scheme 与 authority 都在引号内），目标主机很可能不可控。
+            # 这只是反证而非判定：https://host/x + "@evil.example.com" 仍能改写主机，
+            # 是否需要继续深挖由复核人决定。
+            if sink.sink_kind == "ssrf" and any(tainted[n].get("literal_host") for n in arg_vars):
+                against.append("字面量目标主机：URL 的协议与主机部分写在引号内，"
+                               "外部输入只在主机之后拼接（仍需复核 @ 与路径注入等改写手法）")
+            # 位移容忍身份（issue #6）：规则 + 路径 + 污点变量 + 空白归一化终点行 + 出现序号，
+            # 不含绝对行号——格式化插入不会把旧基线条目误标为已修复。
+            if occurrences is None:
+                occurrences = {}
+            normalized = " ".join(line.split())
+            occ_key = (sink.rule_id, rel_path, var, normalized)
+            index = occurrences.get(occ_key, 0)
+            occurrences[occ_key] = index + 1
+            fingerprint = hashlib.sha256(f"{sink.rule_id}:{rel_path}:{var}:{normalized}:{index}".encode()).hexdigest()[:16]
             findings.append(Finding(
                 rule_id=sink.rule_id,
                 title=f"{sink.title}（污点追踪）",
@@ -207,8 +244,9 @@ def _analyze_file(task: tuple[str, str]) -> list[Finding]:
     rel = path.relative_to(root).as_posix()
     lines = content.splitlines()
     out: list[Finding] = []
+    occurrences: dict = {}
     for start, end, name in split_methods(lines):
-        out.extend(analyze_method(lines[start - 1:end], start, rel, name))
+        out.extend(analyze_method(lines[start - 1:end], start, rel, name, occurrences))
     return out
 
 

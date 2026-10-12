@@ -160,6 +160,12 @@ SANITIZERS: tuple[SanitizerModel, ...] = (
                    ("sql",), "使用了占位符或 setter 绑定，说明数据未直接进 SQL 文本。"),
     SanitizerModel("路径规范化", re.compile(r"\.normalize\s*\(|\.toRealPath\s*\(|getCanonicalPath\s*\("),
                    ("file",), "路径被规范化，但还需确认之后是否做了目录边界比较。"),
+    SanitizerModel("文件名剥离", re.compile(
+        r"FilenameUtils\.getName\s*\("          # Apache Commons IO
+        r"|\.getFileName\s*\(\s*\)"             # java.nio Path.getFileName()
+        r"|File\s*\([^()]*\)\.getName\s*\("     # new File(...).getName()
+        r"|StringUtils\.substringAfterLast\s*\("),
+        ("file", "upload"), "只取路径的最后一段，穿越分量在赋值时已被丢弃。"),
     SanitizerModel("目录边界校验", re.compile(r"startsWith\s*\(|\.contains\s*\(\s*(?:allowed|white|base|root)"),
                    ("file", "redirect"), "存在前缀或包含判断，可能限制在允许范围内。"),
     SanitizerModel("白名单校验", re.compile(r"(?:allow|white)\w*\.contains\s*\(|isAllowed\s*\(|inArray\s*\(|Enum\.valueOf\s*\("),
