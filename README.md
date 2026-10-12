@@ -75,7 +75,7 @@ jal . -O
 jal .
 ```
 
-旧命令 `java-audit scan .` 继续兼容。已发布的 v1.8.0 wheel 可继续使用旧命令；`jal` 是 v1.9.0 源码版的推荐入口。
+旧命令 `java-audit scan .` 继续兼容。已发布的 v1.8.0 wheel 可继续使用旧命令；`jal` 是 v1.9.0 起源码版的推荐入口。
 
 ### 常用短命令
 
@@ -154,7 +154,7 @@ jal s -h
 | 稳定 | 多引擎归并 | SARIF、Semgrep、SpotBugs、Dependency-Check、CodeQL |
 | 稳定 | 复核档案 | 本地保存、导入导出、基线新增与已修复分类 |
 | 稳定 | 验证台账 | 任务卡、执行进度、成功判据、证据路径和误报归因 |
-| 试点 | 匿名评测语料 | 15 类 46 案例（含真实脱敏样本），train / validation / holdout 三分 |
+| 试点 | 匿名评测语料 | 15 类 59 案例（11 个跨方法、11 个开源/CVE 脱敏样本），train / validation / holdout 三分 |
 
 **状态说明：** 稳定＝已纳入常规测试 · 测试中＝功能可用但仍在完善 · 试点＝用于验证方向和评测流程
 
@@ -261,7 +261,7 @@ jal . --yes -f high --json-summary > summary.json
 {
   "schema_version": "jal-summary/1",
   "status": "ok",
-  "tool": {"name": "java-audit-lab", "version": "1.9.0"},
+  "tool": {"name": "java-audit-lab", "version": "2.0.0"},
   "target": "/path/to/project",
   "scanners": ["builtin", "secrets", "taint"],
   "counts": {"findings": 12, "by_severity": {}, "by_scanner": {}},

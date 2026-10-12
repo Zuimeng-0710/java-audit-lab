@@ -1,0 +1,23 @@
+{
+  "case_id": "SSRF-102",
+  "title": "主机白名单 + UriComponentsBuilder 构造固定来源请求",
+  "category": "ssrf",
+  "expected": "safe",
+  "forbidden_rules": [
+    "JAL-SSRF-001",
+    "JAL-SSRF-101"
+  ],
+  "security_controls": [
+    "目标主机白名单",
+    "URL 结构化构造"
+  ],
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "resttemplate"
+  ],
+  "evidence_level": "certain",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "用户输入只用于白名单匹配，目标 URL 由服务端常量拼装。"
+}

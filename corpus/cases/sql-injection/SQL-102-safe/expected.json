@@ -1,0 +1,21 @@
+{
+  "case_id": "SQL-102",
+  "title": "三层传播下 PreparedStatement 参数绑定",
+  "category": "sql-injection",
+  "expected": "safe",
+  "forbidden_rules": [
+    "JAL-SQL-001"
+  ],
+  "security_controls": [
+    "PreparedStatement 参数绑定"
+  ],
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "jdbc"
+  ],
+  "evidence_level": "certain",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "与 SQL-101 同构，唯一差异是 Mapper 用参数绑定。"
+}

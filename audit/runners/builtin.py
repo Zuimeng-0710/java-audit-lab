@@ -80,7 +80,7 @@ RULES = (
     ),
     Rule(
         "JAL-SSRF-001", "动态服务端请求目标", "CWE-918", "high", "low",
-        re.compile(r"new\s+URL\s*\(\s*(?!\")[A-Za-z_$][\w$]*|\.openConnection\s*\(\s*\)"),
+        re.compile(r"new\s+(?:java\.net\.)?URL\s*\(\s*(?!\")[A-Za-z_$][\w$]*|\.openConnection\s*\(\s*\)"),
         "发现动态 URL 或网络连接创建点，需要确认外部输入能否控制请求目标。",
         ("追踪协议、主机、端口和路径的来源。", "解析 DNS 后检查所有目标 IP。", "验证重定向后是否重新执行相同限制。"),
         "使用目标白名单，禁止非 HTTP(S) 协议、私网和元数据地址，并限制重定向。",

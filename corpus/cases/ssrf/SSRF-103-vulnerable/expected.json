@@ -1,0 +1,24 @@
+{
+  "case_id": "SSRF-103",
+  "title": "openStream 下载任意 URL（java-sec-code 脱敏）",
+  "category": "ssrf",
+  "expected": "vulnerable",
+  "expected_rules": [
+    "JAL-SSRF-001"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/ssrf/DownloadController.java",
+      "line": 14
+    }
+  ],
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "certain",
+  "source": "desensitized",
+  "derived_from": "JoyChou93/java-sec-code (https://github.com/JoyChou93/java-sec-code) SSRF.java /openStream",
+  "license": "MIT",
+  "notes": "脱敏自 openStream 模式：file:// 等协议可直接读本地文件。"
+}

@@ -1,0 +1,24 @@
+{
+  "case_id": "LOG-101",
+  "title": "Controller→AuditService 传播的令牌日志",
+  "category": "sensitive-log",
+  "expected": "vulnerable",
+  "expected_rules": [
+    "JAL-LOG-001"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/log/AuditService.java",
+      "line": 13
+    }
+  ],
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc",
+    "slf4j"
+  ],
+  "evidence_level": "certain",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "令牌从入口传到审计服务后落入日志。"
+}

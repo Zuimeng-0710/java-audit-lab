@@ -77,7 +77,7 @@ jal . -O
 jal .
 ```
 
-The legacy `java-audit scan .` command remains supported. The published v1.8.0 wheel continues to use the legacy command; `jal` is the recommended entry point for the v1.9.0 source tree.
+The legacy `java-audit scan .` command remains supported. The published v1.8.0 wheel continues to use the legacy command; `jal` is the recommended entry point since v1.9.0.
 
 ### Short command reference
 
@@ -151,7 +151,7 @@ Each stage records available and missing evidence. Scanner output and human answ
 | Stable | Multi-engine consolidation | SARIF, Semgrep, SpotBugs, Dependency-Check, and CodeQL |
 | Stable | Review archive | Local storage, import/export, and baseline classification |
 | Stable | Verification ledger | Task cards, progress, success criteria, evidence paths, and false-positive attribution |
-| Pilot | Anonymous evaluation corpus | 15 families, 46 cases (incl. redacted real-world patterns), train / validation / holdout splits |
+| Pilot | Anonymous evaluation corpus | 15 families, 59 cases (11 cross-method, 11 redacted open-source/CVE patterns), train / validation / holdout splits |
 
 **Status definitions:** Stable = covered by routine tests · Beta = usable and still evolving · Pilot = validating the direction and evaluation workflow
 

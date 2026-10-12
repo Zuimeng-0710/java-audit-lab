@@ -1,0 +1,23 @@
+{
+  "case_id": "CMD-101",
+  "title": "Controller→Service 传播的命令拼接",
+  "category": "command-injection",
+  "expected": "vulnerable",
+  "expected_rules": [
+    "JAL-CMD-001"
+  ],
+  "expected_locations": [
+    {
+      "path": "src/main/java/lab/corpus/cmd/DiagService.java",
+      "line": 13
+    }
+  ],
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "certain",
+  "source": "synthetic",
+  "license": "MIT",
+  "notes": "host 来自请求参数，经 Service 传播后拼入 exec。"
+}

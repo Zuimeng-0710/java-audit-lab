@@ -1,0 +1,23 @@
+{
+  "case_id": "PATH-102",
+  "title": "规范化 + 根目录边界校验（java-sec-code 脱敏）",
+  "category": "path-traversal",
+  "expected": "safe",
+  "forbidden_rules": [
+    "JAL-PATH-001",
+    "JAL-PATH-101"
+  ],
+  "security_controls": [
+    "getCanonicalFile 规范化",
+    "根目录前缀校验"
+  ],
+  "scope": "production",
+  "frameworks": [
+    "spring-mvc"
+  ],
+  "evidence_level": "certain",
+  "source": "desensitized",
+  "derived_from": "JoyChou93/java-sec-code (https://github.com/JoyChou93/java-sec-code) PathTraversal.java /path_traversal/sec (pathFilter 思路)",
+  "license": "MIT",
+  "notes": "脱敏自 getImageSec 模式：先过滤非法路径再读取，并以规范化后的边界校验收尾。"
+}
